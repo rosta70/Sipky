@@ -146,6 +146,8 @@ button:hover {
     gap: 20px;
     justify-content: center;
     margin-top: 20px;
+    /* Důležité: Na desktopu je standardní tok */
+    display: flex;
 }
 
 /* Karta jednoho hráče */
@@ -158,8 +160,7 @@ button:hover {
     border: 2px solid transparent;
     transition: border-color 0.3s, background-color 0.3s;
     line-height: 1.3;
-    /* Opravujeme: Zajišťujeme viditelnost defaultně */
-    display: block; 
+    display: block; /* Zajišťujeme, že je defaultně viditelná */
 }
 
 /* Zvýraznění aktivního hráče */
@@ -182,6 +183,7 @@ button:hover {
     font-size: 1.5em;
     color: #c0392b; 
 }
+
 
 /* --- Styly pro statistickou tabulku (history.html) --- */
 
@@ -210,8 +212,6 @@ button:hover {
     /* Využití maximální šířky a nulové okraje */
     body {
         padding: 0 !important;
-        /* Zrušíme Grid na body, který by mohl působit problémy s neúplným HTML */
-        display: block; 
     }
     
     #setup-section {
@@ -242,7 +242,7 @@ button:hover {
         padding: 10px;
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
-        border-bottom: 0; /* Přilepení k inputu */
+        border-bottom: 0; 
     }
     
     /* VŠECHNY KARTY: Pro mobil bez okrajů pro úsporu místa */
@@ -253,9 +253,10 @@ button:hover {
         padding: 10px;
         border-radius: 0;
         box-shadow: none;
-        border-bottom: 1px solid #ddd; /* Jemné oddělení neaktivních karet */
+        /* Důležité pro neaktivní karty, když se nehraje */
+        border-bottom: 1px solid #ddd; 
     }
-
+    
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
     #dart-input {
         margin-top: 0 !important;
