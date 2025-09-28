@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (Finalizováno: Opravená vazba ID tlačítka přes delegování)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SPOLEHLIVÉ FUNGOVÁNÍ TLAČÍTKA)
 
 // Globální stav hry
 let players = [];
@@ -20,16 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPlayers();
     
     const setupSection = document.getElementById('setup-section');
+    const endGameContainer = document.getElementById('end-game-button-container'); // Odkaz na nový kontejner
     
-    // Tlačítko pro Ukončení Hry
+    // 1. Tlačítko pro Ukončení Hry
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru';
     endGameBtn.id = 'end-game-btn'; 
     endGameBtn.style.backgroundColor = '#9b59b6';
     endGameBtn.style.display = 'none'; // Skryté na začátku
-    setupSection.appendChild(endGameBtn);
+    endGameContainer.appendChild(endGameBtn); // Připojeno k novému kontejneru
     
-    // Původní tlačítko Export
+    // 2. Původní tlačítko Export
     const exportBtn = document.createElement('button');
     exportBtn.innerText = 'Exportovat JSON Historii';
     exportBtn.onclick = exportHistoryToJSON;
@@ -52,7 +53,7 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ (Beze změny) ---
+// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
 
 function savePlayers() {
     const playerNames = players.map(p => ({ name: p.name }));
