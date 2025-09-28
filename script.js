@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (s rychlým ukončením, odebráním hráče a statistikami)
+// script.js - CELÝ SOUBOR (s opraveným Bustem na skóre 1)
 
 // Globální stav hry
 let players = [];
@@ -7,12 +7,11 @@ let gameValue = 0;
 let currentPlayerIndex = 0; 
 let currentThrowIndex = 0; 
 let currentMultiplier = 1;
-let lastMultiplierUsed = 1; // Sleduje poslední použitý násobitel pro statistiky
 
 let history = []; 
 const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
-const SAVED_GAME_KEY = 'darts_scorer_saved_game'; // Nový klíč pro rozehranou hru
+const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
 
 
 // --- INICIALIZACE ---
@@ -22,12 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupSection = document.getElementById('setup-section');
     
-    // Přidáno tlačítko pro rychlé ukončení/uložení
+    // Tlačítko pro rychlé ukončení/uložení
     const saveAndEndBtn = document.createElement('button');
     saveAndEndBtn.innerText = 'Ukončit a Uložit hru';
     saveAndEndBtn.id = 'save-and-end-btn';
     saveAndEndBtn.onclick = endGameManual;
-    saveAndEndBtn.style.backgroundColor = '#9b59b6'; // Fialová
+    saveAndEndBtn.style.backgroundColor = '#9b59b6';
     setupSection.appendChild(saveAndEndBtn);
     
     // Původní tlačítko Export
@@ -39,14 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderScoreButtons();
     renderPlayers(); 
     updateInputDisplay(); 
-    checkSavedGame(); // Zkontroluje, zda existuje rozehraná hra
+    checkSavedGame(); 
 });
 
 
 // --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
 
 function savePlayers() {
-    // Uloží do localStorage jména hráčů
     const playerNames = players.map(p => ({ name: p.name }));
     localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(playerNames));
 }
@@ -59,7 +57,7 @@ function loadPlayers() {
             score: 0,
             throws: [], 
             currentRoundThrows: [0, 0, 0],
-            stats: { doubles: 0, triples: 0 } // Inicializace statistik
+            stats: { doubles: 0, triples: 0 } 
         }));
     }
 }
@@ -87,12 +85,11 @@ function saveCurrentGame() {
 function checkSavedGame() {
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     const saveAndEndBtn = document.getElementById('save-and-end-btn');
-    const loadBtn = document.getElementById('load-game-btn'); // Bude přidán v renderPlayers
+    const loadBtn = document.getElementById('load-game-btn'); 
 
     if (savedGame) {
         if (loadBtn) loadBtn.style.display = 'inline-block';
         if (saveAndEndBtn) saveAndEndBtn.style.display = 'inline-block';
-        console.log("Nalezena rozehraná hra.");
     } else {
         if (loadBtn) loadBtn.style.display = 'none';
         if (saveAndEndBtn) saveAndEndBtn.style.display = 'none';
@@ -100,25 +97,21 @@ function checkSavedGame() {
 }
 
 function loadSavedGame(gameState) {
-    // Používá buď uložený stav z localStorage nebo stav z JSON importu
     players = gameState.players;
     gameValue = gameState.gameValue;
     currentPlayerIndex = gameState.currentPlayerIndex;
     currentThrowIndex = gameState.currentThrowIndex;
     currentMultiplier = gameState.currentMultiplier;
-    gameStarted = true; // Předpokládáme, že rozehraná hra je aktivní
+    gameStarted = true; 
     
-    // Obnovení globálního stavu
     renderPlayers();
     updateInputDisplay();
     
-    // Deaktivace tlačítek pro nastavení hry
     document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
     const historyButton = document.querySelector('a[href="history.html"] button');
     if (historyButton) historyButton.disabled = true;
 
     alert(`Rozehraná hra (${gameValue}x01) byla úspěšně načtena!`);
-    // Po načtení se rozehraná hra z localStorage smaže, aby se zabránilo zmatku
     localStorage.removeItem(SAVED_GAME_KEY); 
 }
 
@@ -154,7 +147,6 @@ function removePlayer(name) {
 }
 
 function startGame(value) {
-    // ... (Logika pro start zůstává stejná, jen se inicializují statistiky)
     if (players.length === 0) {
         alert("Nejprve přidejte alespoň jednoho hráče!");
         return;
@@ -167,7 +159,7 @@ function startGame(value) {
         score: gameValue,
         throws: [], 
         currentRoundThrows: [0, 0, 0],
-        stats: p.stats || { doubles: 0, triples: 0 } // Zachování nebo inicializace statistik
+        stats: p.stats || { doubles: 0, triples: 0 }
     }));
     
     currentPlayerIndex = 0;
@@ -191,16 +183,14 @@ function endGameManual() {
     }
 
     if (confirm("Opravdu chcete uložit rozehranou hru a ukončit počítání skóre?")) {
-        saveCurrentGame(); // Uloží rozehraný stav do nového klíče
+        saveCurrentGame(); 
         alert("Hra byla uložena! Můžete ji načíst při příštím spuštění.");
         
-        // Reset stavu
         gameStarted = false;
         gameValue = 0;
         currentThrowIndex = 0;
         currentMultiplier = 1;
         
-        // Reaktivace tlačítek
         document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
         const historyButton = document.querySelector('a[href="history.html"] button');
         if (historyButton) historyButton.disabled = false;
@@ -218,7 +208,6 @@ function renderPlayers() {
     const list = document.getElementById('players-list');
     list.innerHTML = '';
     
-    // Přidání tlačítka pro načtení rozehrané hry, pokud existuje
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     if (savedGame && !gameStarted) {
         const loadBtn = document.createElement('button');
@@ -241,7 +230,9 @@ function renderPlayers() {
         
         const scoreDisplay = isWinner ? "VYHRÁL!" : player.score;
         
+        // Vykreslení aktuálních hodů, s násobitelem aplikovaným POUZE na vizuál
         const throws = player.currentRoundThrows.map((val, i) => {
+            // Tady se provádí vizuální násobení pro zobrazení
             return (i === currentThrowIndex && isCurrent) && currentThrowIndex < 3 ? val * currentMultiplier : val;
         });
 
@@ -249,11 +240,12 @@ function renderPlayers() {
 
         let infoText = `Hody v kole: ${throwsDisplay}`;
         
-        if (isCurrent && currentThrowIndex > 0) {
-            infoText += `<br>Potřeba: <strong class="round-needed">${player.score - currentRoundSum}</strong> (Součet: ${currentRoundSum})`;
+        if (isCurrent) {
+             // Opraveno: Ukazujeme celkovou potřebu (původní skóre mínus součet dosud hozených bodů)
+            const required = player.score - currentRoundSum;
+            infoText += `<br>Potřeba: <strong class="round-needed">${required}</strong> (Součet: ${currentRoundSum})`;
         }
         
-        // Zobrazení tlačítka pro odebrání hráče POUZE před startem hry
         const removeBtn = gameStarted ? '' : 
             `<button onclick="removePlayer('${player.name}')" style="background-color: #c0392b; padding: 3px 8px; font-size: 0.8em; margin-top: 5px;">Odebrat</button>`;
 
@@ -268,7 +260,6 @@ function renderPlayers() {
 }
 
 function renderScoreButtons() {
-    // ... (Zůstává beze změny) ...
     const container = document.getElementById('score-buttons');
     container.innerHTML = '';
     
@@ -324,7 +315,6 @@ function setMultiplier(multiplier) {
     
     if (currentThrowIndex < 3) {
         currentMultiplier = multiplier;
-        lastMultiplierUsed = multiplier; // Sledování násobitele pro statistiky
     }
     updateInputDisplay();
     renderPlayers(); 
@@ -336,6 +326,7 @@ function recordThrow(score) {
         return;
     }
     
+    // KLÍČOVÁ OPRAVA: Vypočítáme skutečnou hodnotu hodu a tu uložíme.
     const value = score * currentMultiplier; 
     const player = players[currentPlayerIndex];
     
@@ -370,6 +361,7 @@ function endRound() {
     let winner = false;
     let gameJustEnded = false; 
 
+    // OPRAVA: Bust nastává, když newScore je < 0 NEBO newScore je přesně 1.
     if (newScore === 0) {
         alert(`${player.name} VYHRÁVÁ hru!`);
         player.score = 0;
@@ -378,6 +370,7 @@ function endRound() {
         gameJustEnded = true;
     } else if (newScore < 0 || newScore === 1) { 
         alert(`${player.name} přestřelil! (Bust). Skóre ${player.score} se nemění.`);
+        // V tomto případě se statistika neodečte a skóre se neodečte.
     } else {
         player.score = newScore;
     }
@@ -396,7 +389,6 @@ function endRound() {
             gameType: gameValue,
             date: new Date().toISOString().slice(0, 10),
             winner: winner ? player.name : 'N/A',
-            // Uložíme statistiky pro hráče
             players: players.map(p => ({
                 name: p.name,
                 finalScore: p.score,
@@ -405,7 +397,7 @@ function endRound() {
             }))
         };
         saveGameHistory(gameResult); 
-        localStorage.removeItem(SAVED_GAME_KEY); // Vyčistíme rozehranou hru po dokončení
+        localStorage.removeItem(SAVED_GAME_KEY); 
     }
     
     player.currentRoundThrows = [0, 0, 0];
@@ -430,7 +422,6 @@ function endRound() {
 // --- UNDO A HISTORY ---
 
 function saveState() {
-    // ... (Zůstává beze změny) ...
     const state = {
         players: JSON.parse(JSON.stringify(players)),
         currentPlayerIndex: currentPlayerIndex,
@@ -443,6 +434,8 @@ function saveState() {
     if (history.length > 50) { 
         history.shift();
     }
+    // Ukládáme aktuální stav i do rozehrané hry pro případ obnovy
+    if (gameStarted) saveCurrentGame();
 }
 
 function undoLastThrow() {
@@ -451,22 +444,17 @@ function undoLastThrow() {
         return;
     }
     
-    // Zde je potřeba odečíst statistiku násobitele z předchozího hodu, pokud byla použita
+    // Logika pro korektní odečtení statistik Double/Triple
     const lastState = history[history.length - 1]; 
-    const previousState = history[history.length - 2]; 
-
-    // Kontrola, zda došlo k odečtení skóre
-    if (lastState.currentThrowIndex > 0 && lastState.currentMultiplier === 1) {
-        const lastPlayer = lastState.players[lastState.currentPlayerIndex];
-        const lastThrowValue = lastPlayer.currentRoundThrows[lastState.currentThrowIndex - 1];
-        
-        // Jednoduchá heuristika: Pokud se hod dělí 2 nebo 3, odečteme z počtu Double/Triple
-        if (lastThrowValue > 0) {
-            if (lastThrowValue % 3 === 0 && previousState.players[previousState.currentPlayerIndex].stats.triples > 0) {
-                players[previousState.currentPlayerIndex].stats.triples--;
-            } else if (lastThrowValue % 2 === 0 && previousState.players[previousState.currentPlayerIndex].stats.doubles > 0) {
-                players[previousState.currentPlayerIndex].stats.doubles--;
-            }
+    const previousPlayer = players[lastState.currentPlayerIndex];
+    
+    // Zjistíme, jestli byl poslední hod Double/Triple PŘED UNDO
+    const lastThrowValue = lastState.players[lastState.currentPlayerIndex].currentRoundThrows[lastState.currentThrowIndex - 1];
+    if (lastThrowValue) {
+        if (lastThrowValue % 3 === 0 && lastThrowValue / 3 <= 20) {
+            previousPlayer.stats.triples--;
+        } else if (lastThrowValue % 2 === 0 && lastThrowValue / 2 <= 20) {
+            previousPlayer.stats.doubles--;
         }
     }
     
@@ -488,8 +476,7 @@ function undoLastThrow() {
     if (historyButton) historyButton.disabled = gameStarted;
 }
 
-
-// --- EXPORT JSON (Zůstává stejné) ---
+// --- EXPORT JSON ---
 
 function exportHistoryToJSON() {
     if (players.every(p => p.throws.length === 0)) {
@@ -497,7 +484,6 @@ function exportHistoryToJSON() {
         return;
     }
     
-    // ... (zbytek exportu zůstává stejný)
     const data = JSON.stringify(players.map(p => ({
         name: p.name,
         gameType: gameValue,
