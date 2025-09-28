@@ -1,5 +1,6 @@
 /* style.css - CELÝ SOUBOR */
 
+/* --- Základní Styly a Reset --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -23,19 +24,17 @@ h1, h2 {
     text-align: center;
 }
 
-/* NOVÉ: Třída pro skrytí vstupní sekce na mobilu, když se nehraje */
+/* Třída pro skrytí vstupní sekce */
 .dart-input-hidden {
-    max-height: 0 !important; 
+    max-height: 0 !important; 
     opacity: 0;
-    padding: 0 15px !important; 
+    padding: 0 15px !important; 
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     border: none;
     box-shadow: none;
-    /* Zajistí, že se prvek dá odkliknout, i když je max-height 0 */
-    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
 }
-
 
 /* Obecný styl tlačítek */
 button {
@@ -64,44 +63,15 @@ button:hover {
     background-color: #2ecc71;
 }
 
-/* Kontejner pro zobrazení hráčů */
-#players-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    margin-top: 20px;
-}
+/* --- Vylepšení pro sekci zadávání (Dart Input) --- */
 
-/* Karta jednoho hráče */
-.player-card {
-    background-color: #ecf0f1; /* Světle šedá */
-    padding: 15px;
-    border-radius: 8px;
-    width: 250px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border: 2px solid transparent;
-}
-
-/* Zvýraznění aktivního hráče */
-.player-card.active {
-    border-color: #e67e22; /* Oranžový rámeček */
-    background-color: #fef0e7; /* Velmi světle oranžové pozadí */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.player-card strong {
-    font-size: 1.5em;
-    color: #c0392b; /* Červená pro skóre */
-}
-
-/* Zvýraznění aktuálního hodu v kole */
-.current-throw {
+/* NOVÝ INDIKÁTOR ŠIPKY: Zajišťuje jasné zobrazení */
+#throw-indicator { 
+    display: block;
     font-weight: bold;
-    color: #2980b9;
-    padding: 2px 5px;
-    background-color: #d8eaf5;
-    border-radius: 3px;
+    font-size: 1.2em;
+    color: #8e44ad; /* Fialová pro šipku */
+    margin-bottom: 10px;
 }
 
 /* Text pro násobitele a zbývající skóre v kole */
@@ -114,7 +84,6 @@ button:hover {
     color: #1a5273;
     font-size: 1.3em;
 }
-
 
 /* Tlačítka pro násobitele (Double/Triple) */
 #multiplier-buttons {
@@ -133,7 +102,7 @@ button:hover {
     background-color: #e67e22;
 }
 
-/* Nová třída pro aktivní násobitele (červená barva) */
+/* Nová třída pro aktivní násobitele */
 .active-multiplier {
     background-color: #c0392b !important; /* Tmavě červená */
     border: 1px solid #7f8c8d;
@@ -173,46 +142,82 @@ button:hover {
     background-color: #3498db;
 }
 
-/* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (FIX PŘETÉKÁNÍ) */
-/* ================================================= */
+/* --- Karty Hráčů (Players List) --- */
 
-/* Media Query pro menší zařízení (např. mobily na šířku / menší tablety) */
-@media (max-width: 768px) {
-    #score-buttons {
-        grid-template-columns: repeat(5, 1fr); 
-        max-width: 400px;
-    }
+#players-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
 }
 
-/* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
-@media (max-width: 600px) {
-    
-    /* Vynucení změny rozložení na 3 sloupce a zmenšení mezer */
-    #score-buttons {
-        grid-template-columns: repeat(3, 1fr) !important; /* 3 sloupce */
-        gap: 8px !important; /* Menší mezera */
-        max-width: 280px !important; /* Zmenšení celkové šířky */
-        margin: 10px auto !important;
-    }
-    
-    /* Zmenšení paddingu tlačítek pro menší velikost */
-    #score-buttons button {
-        padding: 10px 5px !important; /* Menší velikost tlačítka */
-        font-size: 1em !important;
-    }
-    
-    /* Zmenšení paddingu těla pro maximalizaci místa */
-    body {
-        padding: 5px !important;
-    }
-    
-    /* Zmenšení tlačítek Double/Triple */
-    #multiplier-buttons .multiplier {
-        padding: 10px 10px;
-        font-size: 15px;
-    }
+/* Karta jednoho hráče */
+.player-card {
+    background-color: #ecf0f1; /* Světle šedá */
+    padding: 15px;
+    border-radius: 8px;
+    width: 250px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent;
+    transition: border-color 0.3s, background-color 0.3s;
 }
+
+/* VIZUÁLNÍ ZLEPŠENÍ: Zvýraznění aktivního hráče */
+.player-card.active {
+    border-color: #2ecc71; /* Zelený rámeček */
+    background-color: #d7f5e3; /* Velmi světle zelené pozadí */
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
+    order: -1; /* Posune aktivního hráče na začátek (pro flex layout) */
+}
+
+/* Původní styl pro skóre */
+.player-card strong {
+    font-size: 1.5em;
+    color: #c0392b; /* Červená pro skóre */
+}
+
+/* VIZUÁLNÍ ZLEPŠENÍ: Zobrazení hodů v kole */
+.player-card .round-throws {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.player-card .round-throws span {
+    display: inline-block;
+    padding: 2px 5px;
+    margin: 0 2px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+/* Zadané hody v tomto kole */
+.player-card .throw-recorded {
+    color: #34495e; 
+}
+
+/* Zvýraznění právě zadávaného hodu (dynamický náhled) */
+.player-card .throw-current-input {
+    font-weight: bold;
+    color: white;
+    background-color: #3498db; /* Modré pozadí pro právě zadávaný hod */
+    transform: scale(1.05);
+}
+
+/* Hody, které teprve přijdou na řadu */
+.player-card .throw-pending {
+    color: #bdc3c7; 
+}
+
+/* Zbývající skóre v kole */
+.player-card .score-remaining strong {
+    font-size: 1.8em;
+    color: #c0392b;
+    display: block;
+    margin-top: 5px;
+}
+
 
 /* --- Styly pro statistickou tabulku (history.html) --- */
 
@@ -230,4 +235,55 @@ button:hover {
 }
 #player-stats-table th {
     background-color: #f2f2f2;
+}
+
+/* ================================================= */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ */
+/* ================================================= */
+
+/* Media Query pro menší zařízení (např. mobily na šířku / menší tablety) */
+@media (max-width: 768px) {
+    #score-buttons {
+        grid-template-columns: repeat(5, 1fr); 
+        max-width: 400px;
+    }
+}
+
+/* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
+@media (max-width: 600px) {
+    
+    /* Zmenšení paddingu těla pro maximalizaci místa */
+    body {
+        padding: 5px !important;
+    }
+    
+    /* Zvětšení hlavní nadpisy */
+    .player-card h3 {
+        font-size: 1.1em;
+    }
+    
+    /* Větší skóre a font pro lepší čitelnost */
+    .player-card .score-remaining strong {
+        font-size: 2.2em; /* Ještě větší skóre */
+    }
+
+    /* Vynucení změny rozložení na 3 sloupce a zmenšení mezer */
+    #score-buttons {
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 sloupce */
+        gap: 8px !important; /* Menší mezera */
+        max-width: 95% !important; /* Použijeme % pro flexibilitu */
+        margin: 10px auto !important;
+    }
+    
+    /* Zmenšení paddingu tlačítek pro menší velikost */
+    #score-buttons button {
+        padding: 10px 5px !important; 
+        font-size: 1.1em !important;
+    }
+    
+    /* Zmenšení tlačítek Double/Triple */
+    #multiplier-buttons .multiplier {
+        padding: 10px 10px;
+        font-size: 16px;
+    }
 }
