@@ -90,9 +90,24 @@ button:hover {
     border-radius: 3px;
 }
 
+/* Text pro násobitele a zbývající skóre v kole */
+#dart-input p {
+    font-size: 0.9em;
+    color: #666;
+    margin: 5px 0;
+}
+.round-needed {
+    color: #1a5273;
+    font-size: 1.3em;
+}
+
+
 /* Tlačítka pro násobitele (Double/Triple) */
 #multiplier-buttons {
     margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }
 
 #multiplier-buttons .multiplier {
@@ -102,6 +117,12 @@ button:hover {
 
 #multiplier-buttons .multiplier:hover {
     background-color: #e67e22;
+}
+
+/* Nová třída pro aktivní násobitele (červená barva) */
+.active-multiplier {
+    background-color: #c0392b !important; /* Tmavě červená */
+    border: 1px solid #7f8c8d;
 }
 
 /* Kontejner a styl pro číselná tlačítka (1-20, 25, 0) */
@@ -145,7 +166,6 @@ button:hover {
 /* Media Query pro menší zařízení (např. mobily na šířku / menší tablety) */
 @media (max-width: 768px) {
     #score-buttons {
-        /* Přepneme na 5 sloupců */
         grid-template-columns: repeat(5, 1fr); 
         max-width: 400px;
     }
@@ -154,17 +174,18 @@ button:hover {
 /* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
 @media (max-width: 600px) {
     
-    /* Vynucení změny rozložení na 4 sloupce */
+    /* Vynucení změny rozložení na 3 sloupce a zmenšení mezer */
     #score-buttons {
-        grid-template-columns: repeat(4, 1fr) !important; 
-        max-width: 350px !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 sloupce */
+        gap: 8px !important; /* Menší mezera */
+        max-width: 280px !important; /* Zmenšení celkové šířky */
         margin: 10px auto !important;
     }
     
-    /* Zmenšíme padding tlačítek, ale zvětšíme font pro lepší čitelnost */
+    /* Zmenšení paddingu tlačítek pro menší velikost */
     #score-buttons button {
-        padding: 15px 5px; 
-        font-size: 1.1em;
+        padding: 10px 5px !important; /* Menší velikost tlačítka */
+        font-size: 1em !important;
     }
     
     /* Zmenšení paddingu těla pro maximalizaci místa */
@@ -172,19 +193,9 @@ button:hover {
         padding: 5px !important;
     }
     
-    /* Úprava pro Double/Triple tlačítka */
-    #multiplier-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
-}
-
-/* Media Query pro velmi úzká zobrazení (např. starší telefony) */
-@media (max-width: 400px) {
-    #score-buttons {
-        /* Přepneme na 3 sloupce, pokud je opravdu málo místa */
-        grid-template-columns: repeat(3, 1fr) !important; 
-        max-width: 250px !important;
+    /* Zmenšení tlačítek Double/Triple */
+    #multiplier-buttons .multiplier {
+        padding: 10px 10px;
+        font-size: 15px;
     }
 }
