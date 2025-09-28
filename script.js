@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (Finalizováno: Opravená logika Ukončit hru)
+// script.js - CELÝ SOUBOR (Finalizováno: Opravená vazba ID tlačítka Ukončit hru)
 
 // Globální stav hry
 let players = [];
@@ -22,13 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupSection = document.getElementById('setup-section');
     
     // Tlačítko pro rychlé ukončení/uložení
-    const saveAndEndBtn = document.createElement('button');
-    saveAndEndBtn.innerText = 'Ukončit hru';
-    saveAndEndBtn.id = 'end-game-btn'; 
-    saveAndEndBtn.onclick = promptEndGame; // Nová funkce
-    saveAndEndBtn.style.backgroundColor = '#9b59b6';
-    saveAndEndBtn.style.display = 'none'; // Skryté na začátku
-    setupSection.appendChild(saveAndEndBtn);
+    const endGameBtn = document.createElement('button'); // Změna proměnné
+    endGameBtn.innerText = 'Ukončit hru';
+    endGameBtn.id = 'end-game-btn'; 
+    endGameBtn.onclick = promptEndGame; // Nová funkce
+    endGameBtn.style.backgroundColor = '#9b59b6';
+    endGameBtn.style.display = 'none'; // Skryté na začátku
+    setupSection.appendChild(endGameBtn);
     
     // Původní tlačítko Export
     const exportBtn = document.createElement('button');
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
+// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ (Beze změny) ---
 
 function savePlayers() {
     const playerNames = players.map(p => ({ name: p.name }));
@@ -87,6 +87,7 @@ function checkSavedGame() {
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     const loadBtn = document.getElementById('load-game-btn'); 
 
+    // Zajištění viditelnosti tlačítka pro načtení
     if (loadBtn) {
         loadBtn.style.display = (savedGame && !gameStarted) ? 'inline-block' : 'none';
     }
@@ -240,7 +241,7 @@ function promptEndGame() {
     
     renderPlayers();
     updateInputDisplay();
-    checkSavedGame(); // Zobrazí tlačítko pro načtení, pokud došlo k uložení
+    checkSavedGame(); 
 }
 
 
