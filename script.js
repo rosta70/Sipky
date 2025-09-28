@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PŘES KONTEXT)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PŘES ČISTÝ TEXT)
 
 // Globální stav hry
 let players = [];
@@ -12,6 +12,25 @@ let history = [];
 const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
+
+
+// Mapa pro převod nejběžnějších skóre na text (základní číslovky)
+const NUMBER_TO_TEXT_MAP = {
+    0: "nula", 1: "jedna", 2: "dvě", 3: "tři", 4: "čtyři", 5: "pět", 6: "šest", 7: "sedm", 8: "osm", 9: "devět", 10: "deset", 
+    11: "jedenáct", 12: "dvanáct", 13: "třináct", 14: "čtrnáct", 15: "patnáct", 16: "šestnáct", 17: "sedmnáct", 18: "osmnáct", 19: "devatenáct", 20: "dvacet",
+    // Nejčastější násobky Bull
+    25: "dvacet pět", 30: "třicet", 40: "čtyřicet", 50: "padesát", 60: "šedesát",
+    // Startovní hodnoty
+    101: "sto jedna", 301: "tři sta jedna", 501: "pět set jedna"
+};
+
+function getCzechNumber(number) {
+    // Vrací mapovaný text pro běžná čísla nebo původní číslo (jako string)
+    if (NUMBER_TO_TEXT_MAP[number] !== undefined) {
+        return NUMBER_TO_TEXT_MAP[number];
+    }
+    return number.toString();
+}
 
 
 // --- INICIALIZACE A VAZBA UDÁLOSTÍ ---
@@ -217,8 +236,9 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
-    // TTS: Hlasové oznámení prvního hráče (Přidání kontextu pro správné čtení)
-    speakText(`Začíná hru ${value} na nulu. Hází ${players[currentPlayerIndex].name}`);
+    const gameText = getCzechNumber(value);
+    // TTS: Hlasové oznámení prvního hráče (Opravené: Bez kontextu pro čtení)
+    speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
     saveState(); 
     renderPlayers();
@@ -413,8 +433,8 @@ function recordThrow(score) {
     
     // TTS: Hlasová odezva pro 1. a 2. hod
     if (currentThrowIndex < 2) {
-        // NOVÉ: Přidáme kontext "bodů", aby se číslo četlo jako základní číslovka
-        speakText(`${value} bodů`); 
+        // NOVÉ: Převedení na text bez kontextu
+        speakText(getCzechNumber(value)); 
     }
     
     if (currentMultiplier === 2) {
@@ -450,14 +470,18 @@ function endRound() {
     // --- TTS SEKVENČNÍ LOGIKA ---
     
     // 1. Oznámení 3. hodu
-    const lastThrowUtterance = speakText(`${currentThrows[2]} bodů`);
+    const lastThrowText = getCzechNumber(currentThrows[2]);
+    const lastThrowUtterance = speakText(lastThrowText);
 
-    // 2. Navázání navazujících hlášek přes onend, aby se nepřerušovaly
+    // 2. Navázání navazujících hlášek přes onend
     lastThrowUtterance.onend = function() {
         let announcementText = '';
         
+        // Převod celkového skóre kola na text
+        const totalScoreText = getCzechNumber(totalScore);
+
         if (newScore === 0) {
-            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScore} bodů.`; 
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText}.`; 
             winner = true;
             gameJustEnded = true;
             player.score = 0;
@@ -466,7 +490,8 @@ function endRound() {
             alert(`${player.name} VYHRÁVÁ hru!`);
         } else if (newScore < 0 || newScore === 1) { 
             // BUST
-            announcementText = `Bust! Skóre ${scoreBeforeRound} zůstává. Celkem za kolo ${totalScore} bodů.`;
+            const scoreBeforeRoundText = getCzechNumber(scoreBeforeRound);
+            announcementText = `Bust! Skóre ${scoreBeforeRoundText} zůstává. Celkem za kolo ${totalScoreText}.`;
             alert(`${player.name} hodil ${newScore === 1 ? 'jedna (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
             
             // KOREKCE STATISTIK
@@ -483,7 +508,7 @@ function endRound() {
         } else {
             // Standardní odečet
             player.score = newScore;
-            announcementText = `Celkem za kolo ${totalScore} bodů.`;
+            announcementText = `Celkem za kolo ${totalScoreText}.`;
         }
         
         // 3. Spuštění celkového oznámení
