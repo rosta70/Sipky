@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINALIZOVANÁ VERZE: FIX PŘIDÁVÁNÍ HRÁČŮ A NAČÍTÁNÍ HER)
+// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE: FIX PŘIDÁVÁNÍ HRÁČŮ A VYKRESLENÍ TLAČÍTEK SKÓRE)
 
 // Globální stav hry
 let players = [];
@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.onclick = exportHistoryToJSON;
     setupSection.appendChild(exportBtn);
 
+    // KLÍČOVÁ ZMĚNA: Vykreslení tlačítek skóre hned na začátku
     renderScoreButtons();
     renderPlayers(); 
     updateInputDisplay(); 
@@ -353,7 +354,8 @@ function renderPlayers() {
         loadBtn.id = 'load-game-btn';
         loadBtn.style.backgroundColor = '#9b59b6';
         loadBtn.style.marginRight = '10px';
-        loadBtn.onclick = () => loadSavedGame(JSON.parse(savedGame));
+        // Zde voláme loadSavedGame s daty, pokud existují, jinak s null
+        loadBtn.onclick = () => loadSavedGame(savedGame ? JSON.parse(savedGame) : null);
         list.appendChild(loadBtn);
     }
     
