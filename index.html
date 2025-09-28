@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Počítadlo ŠIPKY (Darts Scorer)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>ŠIPKY - Počítadlo skóre</h1>
+
+    <div id="setup-section">
+        <h2>Nastavení Hry</h2>
+        <button onclick="startGame(101)">Start 101</button>
+        <button onclick="startGame(301)">Start 301</button>
+        <button onclick="startGame(501)">Start 501</button>
+        <button onclick="addPlayer()">Přidat Hráče</button>
+    </div>
+
+    <div id="score-section">
+        <h2>Skóre Hráčů</h2>
+        <div id="players-list">
+            </div>
+    </div>
+    
+    <hr>
+
+    <div id="dart-input">
+        <h2>Zadání Hodu - Aktuální hráč: <span id="current-player-name"></span></h2>
+        <div id="multiplier-buttons">
+            <button class="multiplier" onclick="setMultiplier(2)">Double (x2)</button>
+            <button class="multiplier" onclick="setMultiplier(3)">Triple (x3)</button>
+            <p>Násobitel: <span id="current-multiplier">1</span>x</p>
+        </div>
+        
+        <div id="score-buttons">
+            </div>
+
+        <button onclick="undoLastThrow()">Vrácení zpět (Undo)</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
