@@ -1,20 +1,39 @@
+// script.js
+
 // Globální stav hry
 let players = [];
 let gameStarted = false;
-let gameValue = 0; // 301, 501, atd.
+let gameValue = 0; // 101, 301, 501, atd.
 let currentPlayerIndex = 0;
 let currentThrowIndex = 0; // 0, 1 nebo 2
 let currentMultiplier = 1;
 
 // Ukládání stavů pro funkci Undo
+// Uchovává hluboké kopie stavu hry před každým zaznamenaným hodem
 let history = []; 
+
+// --- INICIALIZACE ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Přidáme tlačítko pro export JSON (jak bylo navrženo v první odpovědi)
+    const setupSection = document.getElementById('setup-section');
+    const exportBtn = document.createElement('button');
+    exportBtn.innerText = 'Exportovat JSON Historii';
+    exportBtn.onclick = exportHistoryToJSON;
+    setupSection.appendChild(exportBtn);
+
+    // Vykreslíme tlačítka pro skóre, i když hra ještě nezačala
+    renderScoreButtons();
+    updateInputDisplay(); // Nastaví výchozí text "Není vybrán"
+});
+
 
 // --- FUNKCE PRO NASTAVENÍ HRY ---
 
 function addPlayer() {
     if (gameStarted) return;
     const name = prompt("Zadejte jméno hráče:");
-    if (name) {
+    if (name && players.length < 8) { // Omezení počtu hráčů
         players.push({
             name: name,
             score: 0,
@@ -22,6 +41,8 @@ function addPlayer() {
             currentRoundThrows: [0, 0, 0] // Hody v aktuálním kole
         });
         renderPlayers();
+    } else if (name) {
+        alert("Maximální počet hráčů (8) byl dosažen.");
     }
 }
 
@@ -32,15 +53,24 @@ function startGame(value) {
     }
     gameValue = value;
     gameStarted = true;
-    players.forEach(p => p.score = gameValue); // Nastaví startovní skóre
+    players.forEach(p => {
+        p.score = gameValue;
+        p.currentRoundThrows = [0, 0, 0];
+        p.throws = []; // Reset historie při nové hře
+    }); 
     currentPlayerIndex = 0;
     currentThrowIndex = 0;
     currentMultiplier = 1;
+    history = []; // Vyčistíme historii pro novou hru
+    
     saveState(); // Uloží výchozí stav
     renderPlayers();
-    renderScoreButtons();
     updateInputDisplay();
+    
+    // Deaktivace tlačítek pro nastavení hry po startu
+    document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
 }
+
 
 // --- FUNKCE PRO ZOBRAZENÍ (RENDER) ---
 
@@ -49,16 +79,28 @@ function renderPlayers() {
     list.innerHTML = '';
     
     players.forEach((player, index) => {
-        const isCurrent = index === currentPlayerIndex && gameStarted;
+        // Kontrola, zda hráč vyhrál, aby se mu nesvítil active stav
+        const isWinner = player.score === 0;
+        const isCurrent = index === currentPlayerIndex && gameStarted && !isWinner;
+        
         const playerDiv = document.createElement('div');
-        playerDiv.className = isCurrent ? 'player-card active' : 'player-card';
+        playerDiv.className = isCurrent ? 'player-card active' : (isWinner ? 'player-card winner' : 'player-card');
+        
+        // Zobrazení skóre
+        const scoreDisplay = isWinner ? "VYHRÁL!" : player.score;
+        
+        // Zobrazení aktuálních hodů, vynásobené násobitelem POUZE pokud je hod 0
+        const throw1 = (currentThrowIndex === 0 && isCurrent) ? player.currentRoundThrows[0] * currentMultiplier : player.currentRoundThrows[0];
+        const throw2 = (currentThrowIndex === 1 && isCurrent) ? player.currentRoundThrows[1] * currentMultiplier : player.currentRoundThrows[1];
+        const throw3 = (currentThrowIndex === 2 && isCurrent) ? player.currentRoundThrows[2] * currentMultiplier : player.currentRoundThrows[2];
+
         playerDiv.innerHTML = `
             <h3>${player.name}</h3>
-            <p>Zbývá: <strong>${player.score}</strong></p>
+            <p>Zbývá: <strong>${scoreDisplay}</strong></p>
             <p>Hody v kole: 
-                <span class="${currentThrowIndex === 0 && isCurrent ? 'current-throw' : ''}">${player.currentRoundThrows[0] * currentMultiplier}</span> | 
-                <span class="${currentThrowIndex === 1 && isCurrent ? 'current-throw' : ''}">${player.currentRoundThrows[1] * currentMultiplier}</span> | 
-                <span class="${currentThrowIndex === 2 && isCurrent ? 'current-throw' : ''}">${player.currentRoundThrows[2] * currentMultiplier}</span>
+                <span class="${currentThrowIndex === 0 && isCurrent ? 'current-throw' : ''}">${throw1}</span> | 
+                <span class="${currentThrowIndex === 1 && isCurrent ? 'current-throw' : ''}">${throw2}</span> | 
+                <span class="${currentThrowIndex === 2 && isCurrent ? 'current-throw' : ''}">${throw3}</span>
             </p>
         `;
         list.appendChild(playerDiv);
@@ -68,12 +110,23 @@ function renderPlayers() {
 function renderScoreButtons() {
     const container = document.getElementById('score-buttons');
     container.innerHTML = '';
-    const scores = [...Array(20).keys()].map(i => i + 1); // 1 až 20
-    scores.push(25); // Přidáme 25 (Bull)
+    
+    // Pole čísel [0, 1, 2, ..., 20] a pak 25
+    const scoresToDisplay = [0];
+    for (let i = 1; i <= 20; i++) {
+        scoresToDisplay.push(i);
+    }
+    scoresToDisplay.push(25); 
 
-    scores.forEach(score => {
+    scoresToDisplay.forEach(score => {
         const btn = document.createElement('button');
         btn.innerText = score;
+        
+        // Přidání třídy pro styling nuly
+        if (score === 0) {
+            btn.classList.add('zero-button');
+        }
+        
         btn.onclick = () => recordThrow(score);
         container.appendChild(btn);
     });
@@ -81,13 +134,16 @@ function renderScoreButtons() {
 
 function updateInputDisplay() {
     document.getElementById('current-multiplier').innerText = currentMultiplier;
+    
+    // Zobrazení jména aktivního hráče
     document.getElementById('current-player-name').innerText = players[currentPlayerIndex] ? players[currentPlayerIndex].name : 'Není vybrán';
-    // Můžeme zvýraznit tlačítka Double/Triple
-    document.querySelectorAll('.multiplier').forEach(btn => btn.style.backgroundColor = 'lightgray');
+    
+    // Zvýraznění aktivního násobitele
+    document.querySelectorAll('.multiplier').forEach(btn => btn.style.backgroundColor = '#f39c12'); // Oranžová z CSS
     if (currentMultiplier === 2) {
-         document.querySelector('[onclick="setMultiplier(2)"]').style.backgroundColor = 'yellow';
+         document.querySelector('[onclick="setMultiplier(2)"]').style.backgroundColor = '#e67e22';
     } else if (currentMultiplier === 3) {
-         document.querySelector('[onclick="setMultiplier(3)"]').style.backgroundColor = 'orange';
+         document.querySelector('[onclick="setMultiplier(3)"]').style.backgroundColor = '#e67e22';
     }
 }
 
@@ -96,14 +152,21 @@ function updateInputDisplay() {
 
 function setMultiplier(multiplier) {
     if (!gameStarted) return;
-    currentMultiplier = multiplier;
+    
+    // Zajištění, že se násobitel aplikuje pouze na aktuální hod
+    if (currentThrowIndex < 3) {
+        currentMultiplier = multiplier;
+    }
     updateInputDisplay();
-    // Aktualizujeme zobrazení hodnot hodu v kole s novým násobitelem
+    // Aktualizujeme zobrazení v kartě hráče, aby viděl hodnotu hodu
     renderPlayers();
 }
 
 function recordThrow(score) {
-    if (!gameStarted) return;
+    if (!gameStarted) {
+        alert("Nejprve spusťte hru a vyberte hráče!");
+        return;
+    }
 
     const value = score * currentMultiplier;
     const player = players[currentPlayerIndex];
@@ -131,14 +194,17 @@ function endRound() {
     const totalScore = player.currentRoundThrows.reduce((a, b) => a + b, 0);
     const newScore = player.score - totalScore;
 
-    // --- PRAVIDLO BUST ---
-    if (newScore < 0 || newScore === 1) { // Bust - přestřelení nuly nebo zbytek 1
-        alert(`${player.name} přestřelil! (Bust). Skóre se nemění.`);
-    } else if (newScore === 0) {
-        // Vítězství!
+    // --- PRAVIDLO BUST & VÍTĚZSTVÍ ---
+
+    if (newScore === 0) {
+        // Vítězství! Hráč hodil přesně na nulu.
         alert(`${player.name} VYHRÁVÁ hru!`);
         player.score = 0;
         gameStarted = false; // Konec hry
+    } else if (newScore < 0 || newScore === 1) { 
+        // Bust - přestřelení nuly (< 0) nebo zbytek 1
+        alert(`${player.name} přestřelil! (Bust). Skóre se neaktualizuje.`);
+        // Skóre hráče zůstane beze změny (jako před začátkem kola)
     } else {
         // Standardní odečet
         player.score = newScore;
@@ -146,7 +212,7 @@ function endRound() {
     
     // Uložení hodu do celkové historie (pro JSON export)
     player.throws.push({ 
-        startScore: player.score + totalScore, // Před odečtem
+        startScore: player.score + (newScore < 0 || newScore === 1 ? 0 : totalScore), // Před odečtem (bere v úvahu Bust)
         endScore: player.score,
         round: [...player.currentRoundThrows]
     });
@@ -155,24 +221,34 @@ function endRound() {
     player.currentRoundThrows = [0, 0, 0];
     currentThrowIndex = 0;
     
-    // Přepnutí na dalšího hráče
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    // Přepnutí na dalšího hráče, pouze pokud hra neskončila
+    if (gameStarted) {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    }
     
     saveState(); // Uloží nový stav hry
     renderPlayers();
     updateInputDisplay();
+
+    // Reaktivace setup tlačítek na konci hry
+    if (!gameStarted) {
+         document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
+    }
 }
 
 // --- UNDO A HISTORY ---
 
 function saveState() {
     // Uloží hlubokou kopii aktuálního stavu hry
-    history.push({
+    const state = {
         players: JSON.parse(JSON.stringify(players)),
         currentPlayerIndex: currentPlayerIndex,
         currentThrowIndex: currentThrowIndex,
-        currentMultiplier: currentMultiplier
-    });
+        currentMultiplier: currentMultiplier,
+        gameStarted: gameStarted // Uložíme i stav hry
+    };
+    history.push(state);
+    
     // Omezit historii, aby nezabírala příliš místa
     if (history.length > 50) { 
         history.shift();
@@ -193,19 +269,29 @@ function undoLastThrow() {
     currentPlayerIndex = prevState.currentPlayerIndex;
     currentThrowIndex = prevState.currentThrowIndex;
     currentMultiplier = prevState.currentMultiplier;
+    gameStarted = prevState.gameStarted;
 
     // Překreslení
     renderPlayers();
     updateInputDisplay();
-    gameStarted = true; // Zajištění, že se hra znovu zapne, pokud se vrátíme ze stavu "Vítězství"
+    
+    // Zajištění, že se setup tlačítka resetují podle stavu hry
+    const setupButtons = document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])');
+    setupButtons.forEach(btn => btn.disabled = gameStarted);
 }
 
-// --- VOLITELNÉ: EXPORT JSON ---
+// --- EXPORT JSON ---
 
 function exportHistoryToJSON() {
+    if (players.every(p => p.throws.length === 0)) {
+        alert("Žádné hody k exportování. Zahrajte alespoň jedno kolo.");
+        return;
+    }
+    
     const data = JSON.stringify(players.map(p => ({
         name: p.name,
         gameValue: gameValue,
+        finalScore: p.score,
         history: p.throws
     })), null, 2);
 
@@ -213,19 +299,9 @@ function exportHistoryToJSON() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sipky_historie_${new Date().toISOString()}.json`;
+    a.download = `sipky_historie_${new Date().toISOString().slice(0, 10)}.json`; // Název souboru
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
-
-// ZAVOLAT PŘI NAČTENÍ STRÁNKY
-document.addEventListener('DOMContentLoaded', () => {
-    // Přidáme tlačítko pro export JSON do HTML
-    const setupSection = document.getElementById('setup-section');
-    const exportBtn = document.createElement('button');
-    exportBtn.innerText = 'Exportovat JSON Historii';
-    exportBtn.onclick = exportHistoryToJSON;
-    setupSection.appendChild(exportBtn);
-});
