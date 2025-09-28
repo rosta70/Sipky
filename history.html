@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Výsledková listina Šipky</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+
+    <h1>Historie Her a Výsledková listina</h1>
+
+    <div id="setup-section" style="text-align: left; padding: 10px 20px;">
+        <a href="index.html" style="text-decoration: none;">
+            <button style="background-color: #34495e;">← Zpět k počítadlu skóre</button>
+        </a>
+        <button id="clear-history-btn" style="background-color: #c0392b; float: right;">Smazat historii</button>
+    </div>
+
+    <div id="history-container">
+        <p id="no-history-msg">Žádná uložená historie her.</p>
+    </div>
+
+    <script>
+        // Historie bude načítána a zpracována přímo zde (minimalistický JS)
+        document.addEventListener('DOMContentLoaded', loadHistory);
+
+        const HISTORY_STORAGE_KEY = 'darts_scorer_history';
+
+        function loadHistory() {
+            const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+            const container = document.getElementById('history-container');
+            const noMsg = document.getElementById('no-history-msg');
+            container.innerHTML = '';
+
+            if (allHistory.length === 0) {
+                container.appendChild(noMsg);
+                return;
+            }
+
+            // Vytvoření HTML pro každou hru
+            allHistory.reverse().forEach((game, index) => {
+                let playerDetails = game.players.map(p => 
+                    `<li>${p.name}: Zbývalo ${p.finalScore} bodů (Celkem hodů: ${p.allThrows.length})</li>`
+                ).join('');
+                
+                const gameElement = document.createElement('div');
+                gameElement.className = 'history-card';
+                gameElement.innerHTML = `
+                    <h3>Hra #${allHistory.length - index} (${game.gameType}x01)</h3>
+                    <p>Datum: <strong>${game.date}</strong></p>
+                    <p>Vítěz: <strong style="color: ${game.winner === 'N/A' ? 'gray' : '#27ae60'};">${game.winner}</strong></p>
+                    <p>Účastníci:</p>
+                    <ul style="list-style-type: none; padding: 0;">
+                        ${playerDetails}
+                    </ul>
+                `;
+                container.appendChild(gameElement);
+            });
+            
+            // Přidání stylů pro history-card (může být i v style.css)
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .history-card {
+                    background-color: #ffffff;
+                    padding: 15px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    margin: 15px auto;
+                    max-width: 600px;
+                    border-left: 5px solid #1a5273;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Funkce pro smazání celé historie
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            if (confirm("Opravdu chcete smazat CELOU historii uložených her?")) {
+                localStorage.removeItem(HISTORY_STORAGE_KEY);
+                loadHistory(); // Znovu načte a zobrazí prázdný seznam
+            }
+        });
+
+    </script>
+</body>
+</html>
