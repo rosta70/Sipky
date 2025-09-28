@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PŘES ČISTÝ TEXT)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PO CIFRÁCH)
 
 // Globální stav hry
 let players = [];
@@ -13,23 +13,24 @@ const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
 
-
-// Mapa pro převod nejběžnějších skóre na text (základní číslovky)
-const NUMBER_TO_TEXT_MAP = {
-    0: "nula", 1: "jedna", 2: "dvě", 3: "tři", 4: "čtyři", 5: "pět", 6: "šest", 7: "sedm", 8: "osm", 9: "devět", 10: "deset", 
-    11: "jedenáct", 12: "dvanáct", 13: "třináct", 14: "čtrnáct", 15: "patnáct", 16: "šestnáct", 17: "sedmnáct", 18: "osmnáct", 19: "devatenáct", 20: "dvacet",
-    // Nejčastější násobky Bull
-    25: "dvacet pět", 30: "třicet", 40: "čtyřicet", 50: "padesát", 60: "šedesát",
-    // Startovní hodnoty
-    101: "sto jedna", 301: "tři sta jedna", 501: "pět set jedna"
+// Mapa pro čtení číslic a speciálních čísel
+const DIGIT_MAP = {
+    '0': 'nula', '1': 'jedna', '2': 'dvě', '3': 'tři', '4': 'čtyři', '5': 'pět',
+    '6': 'šest', '7': 'sedm', '8': 'osm', '9': 'devět',
+    // Speciální pravidla pro celá čísla, kde čtení po cifrách by znělo špatně
+    '101': 'sto jedna', '301': 'tři sta jedna', '501': 'pět set jedna' 
 };
 
-function getCzechNumber(number) {
-    // Vrací mapovaný text pro běžná čísla nebo původní číslo (jako string)
-    if (NUMBER_TO_TEXT_MAP[number] !== undefined) {
-        return NUMBER_TO_TEXT_MAP[number];
+function getCzechNumberByDigits(number) {
+    const numStr = number.toString();
+    
+    // Použít celočíselné čtení pro startovní hodnoty
+    if (DIGIT_MAP[numStr] !== undefined) {
+        return DIGIT_MAP[numStr];
     }
-    return number.toString();
+    
+    // Čtení po cifrách pro skóre
+    return numStr.split('').map(digit => DIGIT_MAP[digit] || digit).join(' ');
 }
 
 
@@ -236,8 +237,8 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
-    const gameText = getCzechNumber(value);
-    // TTS: Hlasové oznámení prvního hráče (Opravené: Bez kontextu pro čtení)
+    const gameText = getCzechNumberByDigits(value);
+    // TTS: Hlasové oznámení prvního hráče
     speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
     saveState(); 
@@ -433,8 +434,7 @@ function recordThrow(score) {
     
     // TTS: Hlasová odezva pro 1. a 2. hod
     if (currentThrowIndex < 2) {
-        // NOVÉ: Převedení na text bez kontextu
-        speakText(getCzechNumber(value)); 
+        speakText(getCzechNumberByDigits(value)); 
     }
     
     if (currentMultiplier === 2) {
@@ -470,7 +470,7 @@ function endRound() {
     // --- TTS SEKVENČNÍ LOGIKA ---
     
     // 1. Oznámení 3. hodu
-    const lastThrowText = getCzechNumber(currentThrows[2]);
+    const lastThrowText = getCzechNumberByDigits(currentThrows[2]);
     const lastThrowUtterance = speakText(lastThrowText);
 
     // 2. Navázání navazujících hlášek přes onend
@@ -478,10 +478,11 @@ function endRound() {
         let announcementText = '';
         
         // Převod celkového skóre kola na text
-        const totalScoreText = getCzechNumber(totalScore);
+        const totalScoreText = getCzechNumberByDigits(totalScore);
+        const scoreBeforeRoundText = getCzechNumberByDigits(scoreBeforeRound);
 
         if (newScore === 0) {
-            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText}.`; 
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText} bodů.`; 
             winner = true;
             gameJustEnded = true;
             player.score = 0;
@@ -490,7 +491,6 @@ function endRound() {
             alert(`${player.name} VYHRÁVÁ hru!`);
         } else if (newScore < 0 || newScore === 1) { 
             // BUST
-            const scoreBeforeRoundText = getCzechNumber(scoreBeforeRound);
             announcementText = `Bust! Skóre ${scoreBeforeRoundText} zůstává. Celkem za kolo ${totalScoreText}.`;
             alert(`${player.name} hodil ${newScore === 1 ? 'jedna (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
             
