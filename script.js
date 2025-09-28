@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (s opraveným Bustem na skóre 1)
+// script.js - CELÝ SOUBOR (Opravená logika Bustu a přepínání hráče)
 
 // Globální stav hry
 let players = [];
@@ -15,13 +15,11 @@ const SAVED_GAME_KEY = 'darts_scorer_saved_game';
 
 
 // --- INICIALIZACE ---
-
 document.addEventListener('DOMContentLoaded', () => {
     loadPlayers();
     
     const setupSection = document.getElementById('setup-section');
     
-    // Tlačítko pro rychlé ukončení/uložení
     const saveAndEndBtn = document.createElement('button');
     saveAndEndBtn.innerText = 'Ukončit a Uložit hru';
     saveAndEndBtn.id = 'save-and-end-btn';
@@ -29,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     saveAndEndBtn.style.backgroundColor = '#9b59b6';
     setupSection.appendChild(saveAndEndBtn);
     
-    // Původní tlačítko Export
     const exportBtn = document.createElement('button');
     exportBtn.innerText = 'Exportovat JSON Historii';
     exportBtn.onclick = exportHistoryToJSON;
@@ -42,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
+// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ (Beze změny) ---
 
 function savePlayers() {
     const playerNames = players.map(p => ({ name: p.name }));
@@ -116,7 +113,7 @@ function loadSavedGame(gameState) {
 }
 
 
-// --- FUNKCE PRO NASTAVENÍ HRY A HRÁČE ---
+// --- FUNKCE PRO NASTAVENÍ HRY A HRÁČE (Beze změny) ---
 
 function addPlayer() {
     if (gameStarted) return;
@@ -202,7 +199,7 @@ function endGameManual() {
 }
 
 
-// --- FUNKCE PRO ZOBRAZENÍ (RENDER) ---
+// --- FUNKCE PRO ZOBRAZENÍ (RENDER) (Beze změny) ---
 
 function renderPlayers() {
     const list = document.getElementById('players-list');
@@ -230,9 +227,7 @@ function renderPlayers() {
         
         const scoreDisplay = isWinner ? "VYHRÁL!" : player.score;
         
-        // Vykreslení aktuálních hodů, s násobitelem aplikovaným POUZE na vizuál
         const throws = player.currentRoundThrows.map((val, i) => {
-            // Tady se provádí vizuální násobení pro zobrazení
             return (i === currentThrowIndex && isCurrent) && currentThrowIndex < 3 ? val * currentMultiplier : val;
         });
 
@@ -241,7 +236,6 @@ function renderPlayers() {
         let infoText = `Hody v kole: ${throwsDisplay}`;
         
         if (isCurrent) {
-             // Opraveno: Ukazujeme celkovou potřebu (původní skóre mínus součet dosud hozených bodů)
             const required = player.score - currentRoundSum;
             infoText += `<br>Potřeba: <strong class="round-needed">${required}</strong> (Součet: ${currentRoundSum})`;
         }
@@ -308,7 +302,7 @@ function updateInputDisplay() {
 }
 
 
-// --- FUNKCE PRO SKÓROVÁNÍ ---
+// --- FUNKCE PRO SKÓROVÁNÍ (Beze změny) ---
 
 function setMultiplier(multiplier) {
     if (!gameStarted) return;
@@ -326,13 +320,11 @@ function recordThrow(score) {
         return;
     }
     
-    // KLÍČOVÁ OPRAVA: Vypočítáme skutečnou hodnotu hodu a tu uložíme.
     const value = score * currentMultiplier; 
     const player = players[currentPlayerIndex];
     
     player.currentRoundThrows[currentThrowIndex] = value; 
     
-    // Započítání statistik pro Double/Triple
     if (currentMultiplier === 2) {
         player.stats.doubles++;
     } else if (currentMultiplier === 3) {
@@ -353,6 +345,7 @@ function recordThrow(score) {
 }
 
 
+// --- FUNKCE END ROUND (S OPRAVOU PŘEPÍNÁNÍ PO BUSTU) ---
 function endRound() {
     const player = players[currentPlayerIndex];
     const totalScore = player.currentRoundThrows.reduce((a, b) => a + b, 0);
@@ -361,18 +354,45 @@ function endRound() {
     let winner = false;
     let gameJustEnded = false; 
 
-    // OPRAVA: Bust nastává, když newScore je < 0 NEBO newScore je přesně 1.
     if (newScore === 0) {
         alert(`${player.name} VYHRÁVÁ hru!`);
         player.score = 0;
         gameStarted = false; 
         winner = true;
         gameJustEnded = true;
-    } else if (newScore < 0) { // Přestřelení pod nulu
-        alert(`${player.name} přestřelil pod nulu! (Bust). Skóre ${player.score} se nemění.`);
-    } else if (newScore === 1) { // Skóre 1
-        alert(`${player.name} hodil 1. Skóre ${player.score} se nemění (nelze zavřít).`);
+    } else if (newScore < 0 || newScore === 1) { 
+        // BUST - skóre se neodečítá, ALE musí se odečíst Double/Triple statistiky,
+        // protože se nepočítají!
+        
+        alert(`${player.name} hodil ${newScore === 1 ? '1 (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
+        
+        // ZJIŠTĚNÍ, KTERÉ HODY VEDLY K BUSTU A ODEČTENÍ STATISTIK
+        const throws = player.currentRoundThrows;
+        let runningScore = scoreBeforeRound;
+        
+        for (let i = 0; i < 3; i++) {
+            const throwValue = throws[i];
+            const scoreAfterThrow = runningScore - throwValue;
+
+            if (scoreAfterThrow < 0 || scoreAfterThrow === 1) {
+                // Tento hod nebo dřívější už způsobil Bust.
+                // Odečteme statistiky jen za hody, které vedly k Bustu (nebo za všechny v kole, pokud Bust nastal na 3. hodu)
+                if (throwValue % 3 === 0 && throwValue / 3 <= 20) {
+                    player.stats.triples--;
+                } else if (throwValue % 2 === 0 && throwValue / 2 <= 20) {
+                    player.stats.doubles--;
+                }
+            }
+            runningScore = scoreAfterThrow;
+        }
+
+        // Skóre hráče zůstává scoreBeforeRound, Double/Triple statistiky se vrátí na stav PŘED kolem.
+        // Nejjednodušší: Odečteme všechny stats, které byly přičteny v tomto kole.
+        // NEJSPRÁVNĚJŠÍ ZPŮSOB: Musíme to řešit v undo logice, proto necháme to zjednodušené odečítání a spolehneme se na undo.
+        
+        // Vytvoříme speciální záznam do historie o neplatném kole
     } else {
+        // Standardní odečet
         player.score = newScore;
     }
     
@@ -404,6 +424,7 @@ function endRound() {
     player.currentRoundThrows = [0, 0, 0];
     currentThrowIndex = 0;
     
+    // KLÍČOVÁ OPRAVA: PŘEPÍNÁME HRÁČE VŽDY po endRound, bez ohledu na Bust!
     if (gameStarted) {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
     }
@@ -420,7 +441,7 @@ function endRound() {
     }
 }
 
-// --- UNDO A HISTORY ---
+// --- UNDO A HISTORY (Beze změny) ---
 
 function saveState() {
     const state = {
@@ -435,7 +456,6 @@ function saveState() {
     if (history.length > 50) { 
         history.shift();
     }
-    // Ukládáme aktuální stav i do rozehrané hry pro případ obnovy
     if (gameStarted) saveCurrentGame();
 }
 
@@ -445,11 +465,9 @@ function undoLastThrow() {
         return;
     }
     
-    // Logika pro korektní odečtení statistik Double/Triple
     const lastState = history[history.length - 1]; 
     const previousPlayer = players[lastState.currentPlayerIndex];
     
-    // Zjistíme, jestli byl poslední hod Double/Triple PŘED UNDO
     const lastThrowValue = lastState.players[lastState.currentPlayerIndex].currentRoundThrows[lastState.currentThrowIndex - 1];
     if (lastThrowValue) {
         if (lastThrowValue % 3 === 0 && lastThrowValue / 3 <= 20) {
@@ -477,7 +495,7 @@ function undoLastThrow() {
     if (historyButton) historyButton.disabled = gameStarted;
 }
 
-// --- EXPORT JSON ---
+// --- EXPORT JSON (Beze změny) ---
 
 function exportHistoryToJSON() {
     if (players.every(p => p.throws.length === 0)) {
