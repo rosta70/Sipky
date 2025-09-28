@@ -191,6 +191,24 @@ button:hover {
 /* ... (další styly pro hody) ... */
 
 
+/* --- Styly pro statistickou tabulku (history.html) --- */
+
+#player-stats-table, .game-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px auto;
+    max-width: 600px;
+}
+#player-stats-table th, #player-stats-table td, .game-detail-table th, .game-detail-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 0.9em;
+}
+#player-stats-table th {
+    background-color: #f2f2f2;
+}
+
 /* ================================================= */
 /* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (FINÁLNÍ OPTIMALIZACE) */
 /* ================================================= */
@@ -215,12 +233,12 @@ button:hover {
         margin-bottom: 0;
     }
 
-    /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna */
+    /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna (class .game-active) */
     #players-list.game-active .player-card:not(.active) {
-        display: none; 
+        display: none; /* Skryje všechny, které nejsou aktivní */
     }
-
-    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře a bez mezer */
+    
+    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře a bez mezer (vždy viditelná) */
     .player-card.active {
         display: block; 
         order: -2; 
