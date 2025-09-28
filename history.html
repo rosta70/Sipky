@@ -23,6 +23,10 @@
         <input type="file" id="import-file" accept=".json" style="display: none;">
 
         <button id="clear-history-btn" style="background-color: #c0392b; float: right;">Smazat historii</button>
+        
+        <div id="resume-game-container" style="margin-top: 10px; display: none;">
+            <button id="resume-game-btn" style="background-color: #9b59b6;">Dohrát importovanou hru</button>
+        </div>
     </div>
 
     <div id="player-overview-container">
@@ -41,6 +45,7 @@
             document.getElementById('import-file').addEventListener('change', importHistory);
             document.getElementById('export-history-btn').addEventListener('click', exportHistory);
             document.getElementById('clear-history-btn').addEventListener('click', clearHistory);
+            document.getElementById('resume-game-btn').addEventListener('click', resumeGame); // Nová vazba
         });
 
         const HISTORY_STORAGE_KEY = 'darts_scorer_history';
@@ -51,6 +56,7 @@
             const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
             const container = document.getElementById('history-container');
             const overviewTable = document.getElementById('player-stats-table');
+            const resumeContainer = document.getElementById('resume-game-container'); // Nový prvek
             const noMsg = document.getElementById('no-history-msg');
             container.innerHTML = '';
             overviewTable.innerHTML = '';
@@ -58,17 +64,19 @@
             if (allHistory.length === 0) {
                 container.appendChild(noMsg);
                 document.getElementById('export-history-btn').disabled = true;
-                return;
+            } else {
+                document.getElementById('export-history-btn').disabled = false;
+                renderPlayerOverview(allHistory, overviewTable);
+                renderGameDetails(allHistory, container);
             }
-            document.getElementById('export-history-btn').disabled = false;
-
-            // 1. Přehled hráčů a statistik
-            renderPlayerOverview(allHistory, overviewTable);
             
-            // 2. Detailní tabulka her
-            renderGameDetails(allHistory, container);
+            // Kontrola, zda existuje rozehraná hra k dohrání (po importu)
+            const savedGame = localStorage.getItem(SAVED_GAME_KEY);
+            resumeContainer.style.display = savedGame ? 'block' : 'none';
         }
 
+        // ... (renderPlayerOverview a renderGameDetails zůstávají stejné) ...
+        
         function renderPlayerOverview(allHistory, tableElement) {
             const stats = {};
             
@@ -92,24 +100,18 @@
                         stats[p.name].wins++;
                     }
 
-                    // Sčítání statistik pro PPD
-                    const throwsCount = p.allThrows.length * 3; 
-                    const scoreDeducted = gameType * (throwsCount / 3); // Zjednodušený výpočet skóre
-                    
-                    // Bezpečně sčítáme pouze hody, které se odečetly (startScore - endScore)
                     p.allThrows.forEach(round => {
                         stats[p.name].totalScore += (round.startScore - round.endScore);
                     });
                     
+                    const throwsCount = p.allThrows.length * 3;
                     stats[p.name].totalThrows += throwsCount;
                     
-                    // Sčítání Double/Triple
                     stats[p.name].totalDoubles += p.stats ? p.stats.doubles : 0;
                     stats[p.name].totalTriples += p.stats ? p.stats.triples : 0;
                 });
             });
 
-            // Vytvoření HTML tabulky
             let html = '<tr><th>Jméno</th><th>Výhry</th><th>Odehrané hry</th><th>Průměr/3 šipky</th><th>% Double</th><th>% Triple</th></tr>';
             
             const sortedPlayers = Object.keys(stats).sort((a, b) => stats[b].wins - stats[a].wins);
@@ -117,7 +119,6 @@
             sortedPlayers.forEach(name => {
                 const s = stats[name];
                 
-                // Výpočty statistik
                 const avgPerDart = s.totalThrows > 0 ? (s.totalScore / s.totalThrows) * 3 : 0;
                 const ppd = avgPerDart.toFixed(2);
                 
@@ -170,9 +171,10 @@
         }
 
 
-        // --- FUNKCE PRO EXPORT / IMPORT / SMAZÁNÍ ---
+        // --- FUNKCE PRO IMPORT / EXPORT / SMAZÁNÍ ---
         
         function exportHistory() {
+            // ... (logika exportu zůstává stejná) ...
             const data = localStorage.getItem(HISTORY_STORAGE_KEY);
             const savedGame = localStorage.getItem(SAVED_GAME_KEY);
             
@@ -194,6 +196,7 @@
         }
 
         function importHistory(event) {
+            // ... (logika importu aktualizována o zobrazení tlačítka) ...
             const file = event.target.files[0];
             if (!file) return;
 
@@ -211,7 +214,7 @@
                     
                     if (importedData.savedGame) {
                         localStorage.setItem(SAVED_GAME_KEY, JSON.stringify(importedData.savedGame));
-                        alert(`Historie ${importedData.history.length} her a rozehraná hra byly úspěšně naimportovány.`);
+                        alert(`Historie ${importedData.history.length} her a rozehraná hra byly úspěšně naimportovány. Dohrání hry je nyní možné!`);
                     } else {
                          localStorage.removeItem(SAVED_GAME_KEY);
                          alert(`Historie ${importedData.history.length} her byla úspěšně naimportována. Žádná rozehraná hra nebyla nalezena.`);
@@ -233,6 +236,17 @@
                 localStorage.removeItem(SAVED_GAME_KEY);
                 alert("Historie a rozehraná hra byly smazány.");
                 loadHistory(); 
+            }
+        }
+        
+        // --- NOVÁ FUNKCE PRO DOHRÁNÍ HRY ---
+        function resumeGame() {
+            const savedGame = localStorage.getItem(SAVED_GAME_KEY);
+            if (savedGame) {
+                // Přesměrování na hlavní stránku, kde se hra automaticky načte
+                window.location.href = 'index.html'; 
+            } else {
+                alert('Žádná rozehraná hra není k dispozici k dohrání.');
             }
         }
     </script>
