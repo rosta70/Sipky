@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PO CIFRÁCH)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO ČISTÉ TEXTOVÉ MAPOVÁNÍ)
 
 // Globální stav hry
 let players = [];
@@ -13,24 +13,22 @@ const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
 
-// Mapa pro čtení číslic a speciálních čísel
-const DIGIT_MAP = {
-    '0': 'nula', '1': 'jedna', '2': 'dvě', '3': 'tři', '4': 'čtyři', '5': 'pět',
-    '6': 'šest', '7': 'sedm', '8': 'osm', '9': 'devět',
-    // Speciální pravidla pro celá čísla, kde čtení po cifrách by znělo špatně
-    '101': 'sto jedna', '301': 'tři sta jedna', '501': 'pět set jedna' 
+// Mapa pro převod nejběžnějších skóre na text (základní číslovky)
+const NUMBER_TO_TEXT_MAP = {
+    0: "nula", 1: "jedna", 2: "dvě", 3: "tři", 4: "čtyři", 5: "pět", 6: "šest", 7: "sedm", 8: "osm", 9: "devět", 10: "deset", 
+    11: "jedenáct", 12: "dvanáct", 13: "třináct", 14: "čtrnáct", 15: "patnáct", 16: "šestnáct", 17: "sedmnáct", 18: "osmnáct", 19: "devatenáct", 20: "dvacet",
+    25: "dvacet pět", 30: "třicet", 40: "čtyřicet", 50: "padesát", 60: "šedesát",
+    75: "sedmdesát pět", 100: "sto", 120: "sto dvacet", 140: "sto čtyřicet", 180: "sto osmdesát",
+    101: "sto jedna", 301: "tři sta jedna", 501: "pět set jedna"
 };
 
-function getCzechNumberByDigits(number) {
-    const numStr = number.toString();
-    
-    // Použít celočíselné čtení pro startovní hodnoty
-    if (DIGIT_MAP[numStr] !== undefined) {
-        return DIGIT_MAP[numStr];
+function getCzechNumber(number) {
+    // Vrátíme mapovaný text, aby se zabránilo čtení řadových číslovek
+    if (NUMBER_TO_TEXT_MAP[number] !== undefined) {
+        return NUMBER_TO_TEXT_MAP[number];
     }
-    
-    // Čtení po cifrách pro skóre
-    return numStr.split('').map(digit => DIGIT_MAP[digit] || digit).join(' ');
+    // Pro neznámé nebo složitější číslo použijeme původní číslo
+    return number.toString();
 }
 
 
@@ -237,7 +235,7 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
-    const gameText = getCzechNumberByDigits(value);
+    const gameText = getCzechNumber(value);
     // TTS: Hlasové oznámení prvního hráče
     speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
@@ -434,7 +432,7 @@ function recordThrow(score) {
     
     // TTS: Hlasová odezva pro 1. a 2. hod
     if (currentThrowIndex < 2) {
-        speakText(getCzechNumberByDigits(value)); 
+        speakText(getCzechNumber(value)); 
     }
     
     if (currentMultiplier === 2) {
@@ -470,19 +468,18 @@ function endRound() {
     // --- TTS SEKVENČNÍ LOGIKA ---
     
     // 1. Oznámení 3. hodu
-    const lastThrowText = getCzechNumberByDigits(currentThrows[2]);
+    const lastThrowText = getCzechNumber(currentThrows[2]);
     const lastThrowUtterance = speakText(lastThrowText);
 
     // 2. Navázání navazujících hlášek přes onend
     lastThrowUtterance.onend = function() {
         let announcementText = '';
         
-        // Převod celkového skóre kola na text
-        const totalScoreText = getCzechNumberByDigits(totalScore);
-        const scoreBeforeRoundText = getCzechNumberByDigits(scoreBeforeRound);
+        const totalScoreText = getCzechNumber(totalScore);
+        const scoreBeforeRoundText = getCzechNumber(scoreBeforeRound);
 
         if (newScore === 0) {
-            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText} bodů.`; 
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText}.`; 
             winner = true;
             gameJustEnded = true;
             player.score = 0;
