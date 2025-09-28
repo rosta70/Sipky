@@ -23,6 +23,20 @@ h1, h2 {
     text-align: center;
 }
 
+/* NOVÉ: Třída pro skrytí vstupní sekce na mobilu, když se nehraje */
+.dart-input-hidden {
+    max-height: 0 !important; 
+    opacity: 0;
+    padding: 0 15px !important; 
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border: none;
+    box-shadow: none;
+    /* Zajistí, že se prvek dá odkliknout, i když je max-height 0 */
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
+}
+
+
 /* Obecný styl tlačítek */
 button {
     padding: 10px 15px;
@@ -198,4 +212,22 @@ button:hover {
         padding: 10px 10px;
         font-size: 15px;
     }
+}
+
+/* --- Styly pro statistickou tabulku (history.html) --- */
+
+#player-stats-table, .game-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px auto;
+    max-width: 600px;
+}
+#player-stats-table th, #player-stats-table td, .game-detail-table th, .game-detail-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 0.9em;
+}
+#player-stats-table th {
+    background-color: #f2f2f2;
 }
