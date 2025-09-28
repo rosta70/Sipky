@@ -14,6 +14,14 @@
         <a href="index.html" style="text-decoration: none;">
             <button style="background-color: #34495e;">← Zpět k počítadlu skóre</button>
         </a>
+        
+        <button id="export-history-btn" style="background-color: #27ae60;">Exportovat vše do JSON</button>
+        
+        <label for="import-file" style="background-color: #3498db; color: white; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            Importovat JSON
+        </label>
+        <input type="file" id="import-file" accept=".json" style="display: none;">
+
         <button id="clear-history-btn" style="background-color: #c0392b; float: right;">Smazat historii</button>
     </div>
 
@@ -22,32 +30,37 @@
     </div>
 
     <script>
-        // Historie bude načítána a zpracována přímo zde (minimalistický JS)
         document.addEventListener('DOMContentLoaded', loadHistory);
 
         const HISTORY_STORAGE_KEY = 'darts_scorer_history';
-
+        const container = document.getElementById('history-container');
+        const noMsg = document.getElementById('no-history-msg');
+        
+        // --- FUNKCE PRO VYKRESLENÍ HISTORIE ---
         function loadHistory() {
             const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
-            const container = document.getElementById('history-container');
-            const noMsg = document.getElementById('no-history-msg');
             container.innerHTML = '';
 
             if (allHistory.length === 0) {
                 container.appendChild(noMsg);
+                document.getElementById('export-history-btn').disabled = true;
                 return;
             }
+            document.getElementById('export-history-btn').disabled = false;
 
-            // Vytvoření HTML pro každou hru
+
             allHistory.reverse().forEach((game, index) => {
                 let playerDetails = game.players.map(p => 
                     `<li>${p.name}: Zbývalo ${p.finalScore} bodů (Celkem hodů: ${p.allThrows.length})</li>`
                 ).join('');
                 
                 const gameElement = document.createElement('div');
+                // Hra #1 bude dole, Hra #N (nejnovější) bude nahoře
+                const gameNumber = allHistory.length - index; 
+                
                 gameElement.className = 'history-card';
                 gameElement.innerHTML = `
-                    <h3>Hra #${allHistory.length - index} (${game.gameType}x01)</h3>
+                    <h3>Hra #${gameNumber} (${game.gameType}x01)</h3>
                     <p>Datum: <strong>${game.date}</strong></p>
                     <p>Vítěz: <strong style="color: ${game.winner === 'N/A' ? 'gray' : '#27ae60'};">${game.winner}</strong></p>
                     <p>Účastníci:</p>
@@ -58,7 +71,7 @@
                 container.appendChild(gameElement);
             });
             
-            // Přidání stylů pro history-card (může být i v style.css)
+            // Přidání stylů pro history-card (volitelné, jinak se přidá do style.css)
             const style = document.createElement('style');
             style.innerHTML = `
                 .history-card {
@@ -74,14 +87,64 @@
             document.head.appendChild(style);
         }
         
-        // Funkce pro smazání celé historie
+        // --- FUNKCE PRO EXPORT (STÁHNUTÍ SOUBORU) ---
+        document.getElementById('export-history-btn').addEventListener('click', () => {
+            const data = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (!data || data === '[]') {
+                alert("Žádná data k exportování!");
+                return;
+            }
+
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sipky_full_historie_export_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("Historie byla úspěšně exportována!");
+        });
+
+
+        // --- FUNKCE PRO IMPORT (NAHRÁNÍ SOUBORU) ---
+        document.getElementById('import-file').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedHistory = JSON.parse(e.target.result);
+                    
+                    if (!Array.isArray(importedHistory) || importedHistory.length === 0) {
+                        alert("Chyba: Nahraný soubor není platný formát historie (pole her).");
+                        return;
+                    }
+                    
+                    // Uložení importované historie do localStorage
+                    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(importedHistory));
+                    alert(`Historie ${importedHistory.length} her byla úspěšně naimportována.`);
+                    loadHistory(); // Znovu načíst a zobrazit novou historii
+                    
+                } catch (error) {
+                    alert("Chyba při čtení souboru. Zkontrolujte, zda se jedná o platný JSON formát.");
+                    console.error("Import Error:", error);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- FUNKCE PRO SMAZÁNÍ ---
         document.getElementById('clear-history-btn').addEventListener('click', () => {
             if (confirm("Opravdu chcete smazat CELOU historii uložených her?")) {
                 localStorage.removeItem(HISTORY_STORAGE_KEY);
-                loadHistory(); // Znovu načte a zobrazí prázdný seznam
+                alert("Historie byla smazána.");
+                loadHistory(); 
             }
         });
-
     </script>
 </body>
 </html>
