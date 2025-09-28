@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S TTS, OPRAVOU TLAČÍTKA A STATISTIKAMI)
+// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S TTS Jméno + Celkové skóre)
 
 // Globální stav hry
 let players = [];
@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- DELEGOVÁNÍ UDÁLOSTI KLIKNUTÍ NA TĚLO STRÁNKY ---
-// Zajišťuje spolehlivé fungování dynamicky vytvořeného tlačítka
 document.body.addEventListener('click', (event) => {
     if (event.target.id === 'end-game-btn') {
         promptEndGame();
@@ -52,16 +51,16 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// --- TTS (TEXT-TO-SPEECH) FUNKCE ---
+// --- TTS (TEXT-TO-SPEECH) FUNKCE - NYNÍ JAKO speakText ---
 
-function speakScore(score) {
+function speakText(text) {
     if ('speechSynthesis' in window) {
-        let text = `${score}`;
-        
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'cs-CZ'; 
         utterance.rate = 1.2;
 
+        // Okamžitě zruší předchozí řeč a začne mluvit novou
+        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
     } 
 }
@@ -91,7 +90,6 @@ function saveGameHistory(newEntry) {
     const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     allHistory.push(newEntry);
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory));
-    console.log("Hra úspěšně uložena do localStorage."); 
 }
 
 function saveCurrentGame() {
@@ -135,6 +133,10 @@ function loadSavedGame(gameState) {
     if (historyButton) historyButton.disabled = true;
 
     alert(`Rozehraná hra (${gameValue}x01) byla úspěšně načtena!`);
+    
+    // TTS: Hlasové oznámení načteného hráče
+    speakText(`Hra načtena. Na řadě je ${players[currentPlayerIndex].name}`);
+    
     localStorage.removeItem(SAVED_GAME_KEY); 
     checkSavedGame();
 }
@@ -216,6 +218,9 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
+    // NOVÉ: Hlasové oznámení prvního hráče
+    speakText(`Začíná hru ${players[currentPlayerIndex].name}`);
+
     saveState(); 
     renderPlayers();
     updateInputDisplay();
@@ -407,8 +412,8 @@ function recordThrow(score) {
     
     player.currentRoundThrows[currentThrowIndex] = value; 
     
-    // NOVÉ: Hlasová odezva
-    speakScore(value);
+    // Hlasová odezva zadané hodnoty
+    speakText(value.toString());
     
     if (currentMultiplier === 2) {
         player.stats.doubles++;
@@ -446,9 +451,13 @@ function endRound() {
         gameStarted = false; 
         winner = true;
         gameJustEnded = true;
+        // TTS: Oznámení výhry a skóre
+        speakText(`${player.name} vítězí! Celkem za kolo ${totalScore}.`); 
     } else if (newScore < 0 || newScore === 1) { 
         // BUST
         alert(`${player.name} hodil ${newScore === 1 ? '1 (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
+        // TTS: Oznámení bustu
+        speakText(`Bust! Skóre ${scoreBeforeRound} zůstává. Celkem za kolo ${totalScore}.`);
         
         // KOREKCE STATISTIK
         for (let i = 0; i < currentThrows.length; i++) {
@@ -463,6 +472,8 @@ function endRound() {
         }
     } else {
         player.score = newScore;
+        // TTS: Oznámení celkového skóre kola
+        speakText(`Celkem za kolo ${totalScore}.`);
     }
     
     // Uložení hodu do celkové historie hráče
@@ -497,6 +508,8 @@ function endRound() {
     // Přepínáme hráče VŽDY, pokud hra pokračuje
     if (gameStarted) {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        // NOVÉ: Hlasové oznámení dalšího hráče
+        speakText(`Na řadě je ${players[currentPlayerIndex].name}`);
     }
     
     saveState(); 
@@ -571,6 +584,8 @@ function undoLastThrow() {
         setupButtons.forEach(btn => btn.disabled = true);
         if (historyButton) historyButton.disabled = true;
         if (endGameBtn) endGameBtn.style.display = 'inline-block';
+        // TTS: Oznámení aktuálního hráče po Undo
+        speakText(`Vráceno. Na řadě je ${players[currentPlayerIndex].name}`);
     } else {
         setupButtons.forEach(btn => btn.disabled = false);
         if (historyButton) historyButton.disabled = false;
