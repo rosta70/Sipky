@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (OPRAVA VIZUALIZACE PRO MOBIL)
+// script.js - CELÝ SOUBOR (KONEČNÁ VERZE: FIX SKLOŇOVÁNÍ POUŽITÍM ČTENÍ PO CIFRÁCH A FIX MOBILNÍ VIZUALIZACE)
 
 // Globální stav hry
 let players = [];
@@ -181,6 +181,9 @@ function loadSavedGame(gameState) {
     
     speakText(`Hra načtena. Na řadě je ${players[currentPlayerIndex].name}`);
     
+    // Nastavení třídy .game-active pro mobilní vizualizaci
+    document.getElementById('players-list').classList.add('game-active');
+
     localStorage.removeItem(SAVED_GAME_KEY); 
     checkSavedGame();
 }
@@ -266,6 +269,9 @@ function startGame(value) {
     // TTS: Hlasové oznámení prvního hráče
     speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
+    // KLÍČOVÝ KROK: PŘIDÁNÍ TŘÍDY PRO MOBILNÍ SKRYTÍ NEAKTIVNÍCH HRÁČŮ
+    document.getElementById('players-list').classList.add('game-active');
+
     saveState(); 
     renderPlayers();
     updateInputDisplay();
@@ -300,6 +306,9 @@ function promptEndGame() {
     currentThrowIndex = 0;
     currentMultiplier = 1;
 
+    // KLÍČOVÝ KROK: ODEBRÁNÍ TŘÍDY pro zobrazení všech hráčů
+    document.getElementById('players-list').classList.remove('game-active');
+
     document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
     const historyButton = document.querySelector('a[href="history.html"] button');
     if (historyButton) historyButton.disabled = false;
@@ -321,7 +330,7 @@ function renderPlayers() {
     
     // Logika pro skrytí/zobrazení sekce zadání hodu (mobilní optimalizace)
     const dartInput = document.getElementById('dart-input');
-    // Zůstává původní, která je funkční (skrytí/zobrazení)
+    
     if (dartInput) {
         if (gameStarted) {
             dartInput.classList.remove('dart-input-hidden');
@@ -336,7 +345,7 @@ function renderPlayers() {
 
 
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
-    if (!gameStarted) {
+    if (!gameStarted && savedGame) { // Tlačítko načíst se zobrazí jen, pokud není hra spuštěná
         const loadBtn = document.createElement('button');
         loadBtn.innerText = 'Načíst uloženou hru';
         loadBtn.id = 'load-game-btn';
@@ -348,7 +357,6 @@ function renderPlayers() {
     
     players.forEach((player, index) => {
         const isWinner = player.score === 0;
-        // HLAVNÍ VIZUÁLNÍ ZLEPŠENÍ: Zvýraznění aktivního hráče (active)
         const isCurrent = index === currentPlayerIndex && gameStarted && !isWinner;
         
         const currentRoundSum = player.currentRoundThrows.reduce((a, b) => a + b, 0); 
@@ -358,38 +366,40 @@ function renderPlayers() {
         
         const scoreDisplay = isWinner ? "VYHRÁL!" : player.score;
         
-        // Vylepšené zobrazení hodů v kole pro lepší přehled na mobilu
-        const throwsDisplay = player.currentRoundThrows.map((val, i) => {
+        const throws = player.currentRoundThrows.map((val, i) => {
             let throwVal = val;
             let className = '';
 
             if (isCurrent) {
-                // Zvýrazni, která šipka čeká na hod, nebo která byla naposledy hozena
+                // Zvýrazni, která šipka se zadává
                 if (i === currentThrowIndex) {
-                    // Tato šipka se právě zadává
-                    throwVal = val * currentMultiplier; // Zobrazí potenciální skóre
+                    throwVal = val * currentMultiplier; 
                     className = 'throw-current-input';
                 } else if (i < currentThrowIndex) {
-                    // Tato šipka už je zadaná v tomto kole
                     className = 'throw-recorded';
                 } else {
-                    // Tato šipka teprve přijde na řadu
                     className = 'throw-pending';
                 }
-            }
+            } else {
+                // Neaktivní hráči zobrazují 0 pro aktuální kolo, ale poslední celkový hod
+                throwVal = player.currentRoundThrows[i];
+                className = 'throw-recorded';
+            }
             return `<span class="${className}">${throwVal}</span>`;
         }).join(' | ');
 
-        // K textu Potřeba přidáme jasné zvýraznění
         let infoText = `<p class="round-throws">Hody v kole: ${throwsDisplay}</p>`;
         
         if (isCurrent) {
             const required = player.score - currentRoundSum;
             infoText += `<p>Potřeba: <strong class="round-needed">${required}</strong> (Součet: ${currentRoundSum})</p>`;
-        } else {
-            // Pokud nehraje, zobrazí pouze poslední součet kola (pokud je)
-            infoText += `<p>Poslední kolo: ${player.throws.length > 0 ? player.throws[player.throws.length - 1].totalRoundScore : '-'}</p>`;
-        }
+        } else if (!gameStarted && !isWinner) {
+             // Zobrazí pouze hody v kole, pokud se nehraje (pro sekci přidání hráče)
+             infoText = '';
+        } else if (gameStarted && !isCurrent) {
+            // Skryje detaily neaktivního hráče (vizuální zjednodušení)
+            infoText = `<p>Poslední kolo: ${player.throws.length > 0 ? player.throws[player.throws.length - 1].totalRoundScore : '-'}</p>`;
+        }
         
         const removeBtn = gameStarted ? '' : 
             `<button onclick="removePlayer('${player.name}')" style="background-color: #c0392b; padding: 3px 8px; font-size: 0.8em; margin-top: 5px;">Odebrat</button>`;
@@ -429,31 +439,25 @@ function renderScoreButtons() {
 }
 
 function updateInputDisplay() {
-    // Získání existujícího kontejneru pro multiplikátor
     const multiplierTextContainer = document.querySelector('#dart-input p');
     const multiplierText = document.getElementById('current-multiplier');
-    
-    // Nový prvek pro indikaci hodu
-    let throwIndicator = document.getElementById('throw-indicator');
-    if (!throwIndicator) {
-        throwIndicator = document.createElement('span');
-        throwIndicator.id = 'throw-indicator';
-        // Přidáme ho na začátek #dart-input divu
-        const dartInput = document.getElementById('dart-input');
-        if (dartInput) {
-            dartInput.insertBefore(throwIndicator, dartInput.firstChild);
-        }
-    }
-
     const doubleBtn = document.querySelector('[onclick="setMultiplier(2)"]');
     const tripleBtn = document.querySelector('[onclick="setMultiplier(3)"]');
     
     document.getElementById('current-player-name').innerText = players[currentPlayerIndex] ? players[currentPlayerIndex].name : 'Není vybrán';
     
-    // Zobrazení, která šipka se hází
+    // Nový prvek pro indikaci hodu se vytvoří v renderPlayers(), zde se jen aktualizuje
+    let throwIndicator = document.getElementById('throw-indicator');
+    if (!throwIndicator) {
+        throwIndicator = document.createElement('span');
+        throwIndicator.id = 'throw-indicator';
+        const dartInput = document.getElementById('dart-input');
+        if (dartInput) {
+            // Vkládáme nad H2, aby byl indikátor šipky nahoře
+            dartInput.insertBefore(throwIndicator, dartInput.querySelector('h2'));
+        }
+    }
     throwIndicator.innerText = gameStarted ? `Šipka: ${currentThrowIndex + 1} / 3` : '';
-    throwIndicator.style.fontWeight = 'bold';
-    throwIndicator.style.fontSize = '1.2em';
 
     doubleBtn.classList.remove('active-multiplier');
     tripleBtn.classList.remove('active-multiplier');
@@ -482,7 +486,7 @@ function setMultiplier(multiplier) {
         currentMultiplier = multiplier;
     }
     updateInputDisplay();
-    renderPlayers(); // Zajišťuje aktualizaci hodu v reálném čase s multiplikátorem
+    renderPlayers(); 
 }
 
 function recordThrow(score) {
@@ -510,10 +514,9 @@ function recordThrow(score) {
     currentMultiplier = 1; 
     currentThrowIndex++; 
 
-    // Vykreslení před saveState - Důležité, aby se vizuálně aktualizoval hod
     renderPlayers(); 
     updateInputDisplay(); 
-    saveState(); // Uloží stav s NOVÝM currentThrowIndex
+    saveState();
 
     if (currentThrowIndex === 3) {
         endRound();
@@ -699,6 +702,9 @@ function undoLastThrow() {
         setupButtons.forEach(btn => btn.disabled = false);
         if (historyButton) historyButton.disabled = false;
         if (endGameBtn) endGameBtn.style.display = 'none';
+
+        // Odstranění třídy .game-active
+        document.getElementById('players-list').classList.remove('game-active');
     }
     
     checkSavedGame();
