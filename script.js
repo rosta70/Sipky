@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SKLOŇOVÁNÍ ČÍSEL PŘES KONTEXT)
 
 // Globální stav hry
 let players = [];
@@ -12,25 +12,6 @@ let history = [];
 const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
-
-// Mapa pro převod nejběžnějších skóre na text, aby se zabránilo čtení řadových číslovek (např. "třetí" místo "tři")
-const NUMBER_TO_TEXT = {
-    0: "nula", 1: "jedna", 2: "dvě", 3: "tři", 4: "čtyři", 5: "pět", 6: "šest", 7: "sedm", 8: "osm", 9: "devět", 10: "deset", 
-    11: "jedenáct", 12: "dvanáct", 13: "třináct", 14: "čtrnáct", 15: "patnáct", 16: "šestnáct", 17: "sedmnáct", 18: "osmnáct", 19: "devatenáct", 20: "dvacet",
-    // Nejčastější násobky
-    25: "dvacet pět", 30: "třicet", 40: "čtyřicet", 50: "padesát", 60: "šedesát",
-    // 101, 301, 501
-    101: "sto jedna", 301: "tři sta jedna", 501: "pět set jedna"
-};
-
-function numberToCzechText(number) {
-    // Vrací mapovaný text pro běžná čísla nebo původní číslo (pokud je vyšší/neznámé)
-    if (NUMBER_TO_TEXT[number] !== undefined) {
-        return NUMBER_TO_TEXT[number];
-    }
-    // Pro velké nebo neznámé číslo necháme TTS, ať si s ním poradí jako s číslem
-    return number.toString();
-}
 
 
 // --- INICIALIZACE A VAZBA UDÁLOSTÍ ---
@@ -236,9 +217,8 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
-    // TTS: Hlasové oznámení prvního hráče (Převod jména hry na text)
-    const gameText = numberToCzechText(value);
-    speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
+    // TTS: Hlasové oznámení prvního hráče (Přidání kontextu pro správné čtení)
+    speakText(`Začíná hru ${value} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
     saveState(); 
     renderPlayers();
@@ -433,8 +413,8 @@ function recordThrow(score) {
     
     // TTS: Hlasová odezva pro 1. a 2. hod
     if (currentThrowIndex < 2) {
-        // Převedení na text před mluvením
-        speakText(numberToCzechText(value)); 
+        // NOVÉ: Přidáme kontext "bodů", aby se číslo četlo jako základní číslovka
+        speakText(`${value} bodů`); 
     }
     
     if (currentMultiplier === 2) {
@@ -470,19 +450,14 @@ function endRound() {
     // --- TTS SEKVENČNÍ LOGIKA ---
     
     // 1. Oznámení 3. hodu
-    const lastThrowText = numberToCzechText(currentThrows[2]);
-    const lastThrowUtterance = speakText(lastThrowText);
+    const lastThrowUtterance = speakText(`${currentThrows[2]} bodů`);
 
     // 2. Navázání navazujících hlášek přes onend, aby se nepřerušovaly
     lastThrowUtterance.onend = function() {
         let announcementText = '';
-        let nextPlayerText = '';
         
-        // Převod celkového skóre kola na text
-        const totalScoreText = numberToCzechText(totalScore);
-
         if (newScore === 0) {
-            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText}.`; 
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScore} bodů.`; 
             winner = true;
             gameJustEnded = true;
             player.score = 0;
@@ -491,8 +466,7 @@ function endRound() {
             alert(`${player.name} VYHRÁVÁ hru!`);
         } else if (newScore < 0 || newScore === 1) { 
             // BUST
-            const scoreBeforeRoundText = numberToCzechText(scoreBeforeRound);
-            announcementText = `Bust! Skóre ${scoreBeforeRoundText} zůstává. Celkem za kolo ${totalScoreText}.`;
+            announcementText = `Bust! Skóre ${scoreBeforeRound} zůstává. Celkem za kolo ${totalScore} bodů.`;
             alert(`${player.name} hodil ${newScore === 1 ? 'jedna (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
             
             // KOREKCE STATISTIK
@@ -509,7 +483,7 @@ function endRound() {
         } else {
             // Standardní odečet
             player.score = newScore;
-            announcementText = `Celkem za kolo ${totalScoreText}.`;
+            announcementText = `Celkem za kolo ${totalScore} bodů.`;
         }
         
         // 3. Spuštění celkového oznámení
