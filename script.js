@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SPOLEHLIVÉ FUNGOVÁNÍ TLAČÍTKA)
+// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S DELEGOVÁNÍM UDÁLOSTÍ A VYLEPŠENÍMI)
 
 // Globální stav hry
 let players = [];
@@ -20,15 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPlayers();
     
     const setupSection = document.getElementById('setup-section');
-    const endGameContainer = document.getElementById('end-game-button-container'); // Odkaz na nový kontejner
+    const endGameContainer = document.getElementById('end-game-button-container'); 
     
     // 1. Tlačítko pro Ukončení Hry
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru';
     endGameBtn.id = 'end-game-btn'; 
     endGameBtn.style.backgroundColor = '#9b59b6';
-    endGameBtn.style.display = 'none'; // Skryté na začátku
-    endGameContainer.appendChild(endGameBtn); // Připojeno k novému kontejneru
+    endGameBtn.style.display = 'none'; 
+    endGameContainer.appendChild(endGameBtn); 
     
     // 2. Původní tlačítko Export
     const exportBtn = document.createElement('button');
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- DELEGOVÁNÍ UDÁLOSTI KLIKNUTÍ NA TĚLO STRÁNKY ---
-// Toto zajistí, že kliknutí je vždy správně navázáno, i když se DOM mění.
+// Toto zajistí spolehlivé fungování dynamicky vytvořeného tlačítka
 document.body.addEventListener('click', (event) => {
     // Kontrola, zda kliknutý prvek má ID 'end-game-btn'
     if (event.target.id === 'end-game-btn') {
@@ -225,21 +225,17 @@ function promptEndGame() {
     );
 
     if (action) {
-        // ULOŽIT A UKONČIT
         saveCurrentGame();
         alert("Hra byla uložena! Můžete ji načíst při příštím spuštění.");
     } else {
-        // POUZE UKONČIT (Bez uložení rozehraného stavu do SAVED_GAME_KEY)
         localStorage.removeItem(SAVED_GAME_KEY);
     }
     
-    // Reset stavu
     gameStarted = false;
     gameValue = 0;
     currentThrowIndex = 0;
     currentMultiplier = 1;
 
-    // Zobrazení setup tlačítek a skrytí Ukončit hru
     document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
     const historyButton = document.querySelector('a[href="history.html"] button');
     if (historyButton) historyButton.disabled = false;
@@ -259,6 +255,25 @@ function renderPlayers() {
     const list = document.getElementById('players-list');
     list.innerHTML = '';
     
+    // Logika pro skrytí/zobrazení sekce zadání hodu (mobilní optimalizace)
+    const dartInput = document.getElementById('dart-input');
+    const endGameBtn = document.getElementById('end-game-btn');
+
+    if (dartInput) {
+        if (gameStarted) {
+            dartInput.classList.remove('dart-input-hidden');
+            dartInput.style.maxHeight = '500px'; 
+            dartInput.style.opacity = '1';
+            if (endGameBtn) endGameBtn.style.display = 'inline-block';
+        } else {
+            dartInput.classList.add('dart-input-hidden');
+            dartInput.style.maxHeight = '0';
+            dartInput.style.opacity = '0';
+            if (endGameBtn) endGameBtn.style.display = 'none';
+        }
+    }
+
+
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     if (!gameStarted) {
         const loadBtn = document.createElement('button');
@@ -477,9 +492,6 @@ function endRound() {
          document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
          const historyButton = document.querySelector('a[href="history.html"] button');
          if (historyButton) historyButton.disabled = false;
-         
-         const endGameBtn = document.getElementById('end-game-btn');
-         if (endGameBtn) endGameBtn.style.display = 'none'; 
          
          checkSavedGame();
     }
