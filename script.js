@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (včetně trvalého ukládání)
+// script.js - CELÝ SOUBOR (s opravenou funkcí endRound pro spolehlivé ukládání)
 
 // Globální stav hry
 let players = [];
@@ -59,6 +59,7 @@ function saveGameHistory(newEntry) {
     const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     allHistory.push(newEntry);
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory));
+    console.log("Hra úspěšně uložena do localStorage."); // Kontrolní zpráva
 }
 
 
@@ -68,8 +69,7 @@ function addPlayer() {
     if (gameStarted) return;
     const name = prompt("Zadejte jméno hráče:");
     
-    // Kontrola duplicity a délky
-    if (name && players.length < 8 && !players.some(p => p.name === name)) { 
+    if (name && players.length < 8 && !players.some(p => p.name.toLowerCase() === name.toLowerCase())) { 
         players.push({
             name: name,
             score: 0,
@@ -91,7 +91,6 @@ function startGame(value) {
     gameValue = value;
     gameStarted = true;
     
-    // Resetování stavu pro hru, ale zachování jména hráče
     players = players.map(p => ({
         name: p.name,
         score: gameValue,
@@ -109,7 +108,8 @@ function startGame(value) {
     updateInputDisplay();
     
     document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
-    document.querySelector('a[href="history.html"] button').disabled = true;
+    const historyButton = document.querySelector('a[href="history.html"] button');
+    if (historyButton) historyButton.disabled = true;
 }
 
 
@@ -152,7 +152,6 @@ function renderPlayers() {
 }
 
 function renderScoreButtons() {
-    // ... (Zůstává beze změny) ...
     const container = document.getElementById('score-buttons');
     container.innerHTML = '';
     
@@ -241,22 +240,28 @@ function recordThrow(score) {
 function endRound() {
     const player = players[currentPlayerIndex];
     const totalScore = player.currentRoundThrows.reduce((a, b) => a + b, 0);
-    const newScore = player.score - totalScore;
     const scoreBeforeRound = player.score;
+    const newScore = scoreBeforeRound - totalScore; // Správný výpočet
     let winner = false;
+    let gameJustEnded = false; 
 
     if (newScore === 0) {
+        // Vítězství!
         alert(`${player.name} VYHRÁVÁ hru!`);
         player.score = 0;
         gameStarted = false; 
         winner = true;
+        gameJustEnded = true;
     } else if (newScore < 0 || newScore === 1) { 
+        // Bust
         alert(`${player.name} přestřelil! (Bust). Skóre ${player.score} se nemění.`);
+        // player.score zůstává scoreBeforeRound
     } else {
+        // Standardní odečet
         player.score = newScore;
     }
     
-    // Uložení hodu do celkové historie hráče pro export JSON
+    // Uložení hodu do celkové historie hráče pro export JSON (historie hodu)
     player.throws.push({ 
         startScore: scoreBeforeRound,
         endScore: player.score,
@@ -265,8 +270,8 @@ function endRound() {
         bust: (newScore < 0 || newScore === 1)
     });
     
-    // Uložení výsledku celé hry do trvalé historie, pokud hra skončila
-    if (!gameStarted) {
+    // Uložení výsledku celé hry do trvalé historie, POUZE pokud hra právě skončila
+    if (gameJustEnded) {
         const gameResult = {
             gameType: gameValue,
             date: new Date().toISOString().slice(0, 10),
@@ -277,7 +282,7 @@ function endRound() {
                 allThrows: p.throws
             }))
         };
-        saveGameHistory(gameResult);
+        saveGameHistory(gameResult); // Zde se volá trvalé uložení
     }
     
     // Reset pro další kolo
@@ -296,14 +301,14 @@ function endRound() {
     // Reaktivace tlačítek a odkazu na historii
     if (!gameStarted) {
          document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
-         document.querySelector('a[href="history.html"] button').disabled = false;
+         const historyButton = document.querySelector('a[href="history.html"] button');
+         if (historyButton) historyButton.disabled = false;
     }
 }
 
 // --- UNDO A HISTORY ---
 
 function saveState() {
-    // ... (Zůstává beze změny) ...
     const state = {
         players: JSON.parse(JSON.stringify(players)),
         currentPlayerIndex: currentPlayerIndex,
@@ -338,10 +343,11 @@ function undoLastThrow() {
     
     const setupButtons = document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])');
     setupButtons.forEach(btn => btn.disabled = gameStarted);
-    document.querySelector('a[href="history.html"] button').disabled = gameStarted;
+    const historyButton = document.querySelector('a[href="history.html"] button');
+    if (historyButton) historyButton.disabled = gameStarted;
 }
 
-// --- EXPORT JSON (Zde exportujeme pouze data z aktuální hry, trvalá historie se exportuje z history.html) ---
+// --- EXPORT JSON ---
 
 function exportHistoryToJSON() {
     if (players.every(p => p.throws.length === 0)) {
