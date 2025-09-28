@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (Finalizováno: Opravená vazba ID tlačítka Ukončit hru)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SPOLEHLIVÉ FUNGOVÁNÍ TLAČÍTKA)
 
 // Globální stav hry
 let players = [];
@@ -14,23 +14,27 @@ const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
 
 
-// --- INICIALIZACE ---
+// --- INICIALIZACE A VAZBA UDÁLOSTÍ ---
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPlayers();
     
     const setupSection = document.getElementById('setup-section');
     
-    // Tlačítko pro Ukončení Hry
+    // 1. Tlačítko pro Ukončení Hry
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru';
     endGameBtn.id = 'end-game-btn'; 
-    endGameBtn.onclick = promptEndGame; // Přímé navázání funkce
     endGameBtn.style.backgroundColor = '#9b59b6';
-    endGameBtn.style.display = 'none'; // Skryté na začátku
+    endGameBtn.style.display = 'none';
     setupSection.appendChild(endGameBtn);
     
-    // Původní tlačítko Export
+    // ZMĚNA: Přidání posluchače události (EventListener) pro spolehlivost
+    endGameBtn.addEventListener('click', promptEndGame);
+    console.log("Navázána událost 'click' na tlačítko Ukončit hru.");
+
+
+    // 2. Původní tlačítko Export
     const exportBtn = document.createElement('button');
     exportBtn.innerText = 'Exportovat JSON Historii';
     exportBtn.onclick = exportHistoryToJSON;
@@ -239,7 +243,7 @@ function promptEndGame() {
     
     renderPlayers();
     updateInputDisplay();
-    checkSavedGame(); // Zobrazí tlačítko pro načtení, pokud došlo k uložení
+    checkSavedGame(); 
 }
 
 
