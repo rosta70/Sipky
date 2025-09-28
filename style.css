@@ -10,7 +10,7 @@ body {
 }
 
 h1, h2 {
-    color: #1a5273; /* Tmavě modrá pro nadpisy */
+    color: #1a5273;
     text-align: center;
 }
 
@@ -45,7 +45,7 @@ button {
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.2s;
-    background-color: #3498db; /* Středně modrá */
+    background-color: #3498db;
     color: white;
 }
 
@@ -55,7 +55,7 @@ button:hover {
 
 /* Tlačítka pro volbu hry (101, 301, 501) a Export */
 #setup-section button {
-    background-color: #27ae60; /* Zelená */
+    background-color: #27ae60;
     font-weight: bold;
 }
 
@@ -63,33 +63,21 @@ button:hover {
     background-color: #2ecc71;
 }
 
-/* --- Vylepšení pro sekci zadávání (Dart Input) --- */
-
-/* Vylepšení: Snížení vertikálních mezer v input sekci */
-#dart-input h2 {
-    margin-top: 5px; /* Sníženo */
-    margin-bottom: 5px;
-}
-#dart-input p {
-    margin: 5px 0; /* Sníženo */
-}
-#dart-input > button {
-    margin-top: 10px; /* Sníženo */
-}
+/* --- Sekce Zadávání (Dart Input) --- */
 
 /* NOVÝ INDIKÁTOR ŠIPKY: Zajišťuje jasné zobrazení */
 #throw-indicator { 
     display: block;
     font-weight: bold;
     font-size: 1.2em;
-    color: #8e44ad; /* Fialová pro šipku */
-    margin-bottom: 5px; /* Sníženo */
+    color: #8e44ad;
+    margin-bottom: 5px; 
 }
-
-/* Text pro násobitele a zbývající skóre v kole */
-#dart-input p {
-    font-size: 0.9em;
-    color: #666;
+#dart-input h2 { /* Snížení mezer */
+    margin-top: 5px; 
+    margin-bottom: 5px;
+}
+#dart-input p { /* Snížení mezer */
     margin: 5px 0;
 }
 .round-needed {
@@ -99,59 +87,55 @@ button:hover {
 
 /* Tlačítka pro násobitele (Double/Triple) */
 #multiplier-buttons {
-    margin-bottom: 10px; /* Sníženo */
+    margin-bottom: 10px;
     display: flex;
     justify-content: center;
     gap: 10px;
 }
 
 #multiplier-buttons .multiplier {
-    background-color: #f39c12; /* Oranžová */
+    background-color: #f39c12;
     font-weight: bold;
 }
-
 #multiplier-buttons .multiplier:hover {
     background-color: #e67e22;
 }
 
 /* Nová třída pro aktivní násobitele */
 .active-multiplier {
-    background-color: #c0392b !important; /* Tmavě červená */
+    background-color: #c0392b !important; 
     border: 1px solid #7f8c8d;
 }
 
-/* Kontejner a styl pro číselná tlačítka (1-20, 25, 0) */
+/* Kontejner a styl pro číselná tlačítka */
 #score-buttons {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* VÝCHOZÍ: 6 tlačítek v řádku pro desktop */
-    /* ZVÝŠENÍ MEZER MEZI TLAČÍTKY NA DESKTOPU */
+    grid-template-columns: repeat(6, 1fr); 
     gap: 10px; 
     max-width: 500px;
     margin: 10px auto;
 }
 
 #score-buttons button {
-    background-color: #34495e; /* Tmavě šedá */
+    background-color: #34495e;
     color: white;
 }
-
 #score-buttons button:hover {
     background-color: #2c3e50;
 }
 
 /* Speciální styl pro tlačítko NULA (MISS) */
 .zero-button {
-    background-color: #95a5a6 !important; /* Světlejší šedá */
+    background-color: #95a5a6 !important;
     color: white !important;
 }
-
 .zero-button:hover {
     background-color: #7f8c8d !important;
 }
 
 /* Tlačítko Undo */
 #dart-input > button {
-    margin-top: 10px; /* Sníženo */
+    margin-top: 10px;
     background-color: #3498db;
 }
 
@@ -160,14 +144,14 @@ button:hover {
 #players-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px; /* VÝCHOZÍ MEZERA PRO DESKTOP */
+    gap: 20px;
     justify-content: center;
     margin-top: 20px;
 }
 
 /* Karta jednoho hráče */
 .player-card {
-    background-color: #ecf0f1; /* Světle šedá */
+    background-color: #ecf0f1;
     padding: 15px;
     border-radius: 8px;
     width: 250px;
@@ -176,25 +160,19 @@ button:hover {
     transition: border-color 0.3s, background-color 0.3s;
 }
 
-/* VIZUÁLNÍ ZLEPŠENÍ: Zvýraznění aktivního hráče */
+/* Zvýraznění aktivního hráče */
 .player-card.active {
-    border-color: #2ecc71; /* Zelený rámeček */
-    background-color: #d7f5e3; /* Velmi světle zelené pozadí */
+    border-color: #2ecc71;
+    background-color: #d7f5e3;
     box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
-    order: -1; /* Posune aktivního hráče na začátek (pro flex layout) */
-}
-
-/* Původní styl pro skóre */
-.player-card strong {
-    font-size: 1.5em;
-    color: #c0392b; /* Červená pro skóre */
+    order: -1; 
 }
 
 /* VIZUÁLNÍ ZLEPŠENÍ: Zobrazení hodů v kole */
 .player-card .round-throws {
     font-size: 1.1em;
     font-weight: 500;
-    margin-bottom: 5px; /* Sníženo */
+    margin-bottom: 5px;
 }
 
 .player-card .round-throws span {
@@ -205,25 +183,21 @@ button:hover {
     transition: all 0.2s;
 }
 
-/* Zadané hody v tomto kole */
 .player-card .throw-recorded {
     color: #34495e; 
 }
 
-/* Zvýraznění právě zadávaného hodu (dynamický náhled) */
 .player-card .throw-current-input {
     font-weight: bold;
     color: white;
-    background-color: #3498db; /* Modré pozadí pro právě zadávaný hod */
+    background-color: #3498db;
     transform: scale(1.05);
 }
 
-/* Hody, které teprve přijdou na řadu */
 .player-card .throw-pending {
     color: #bdc3c7; 
 }
 
-/* Zbývající skóre v kole */
 .player-card .score-remaining strong {
     font-size: 1.8em;
     color: #c0392b;
@@ -265,17 +239,22 @@ button:hover {
 /* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
 @media (max-width: 600px) {
     
-    /* Zmenšení paddingu těla pro maximalizaci místa */
+    /* Zcela odstraníme globální padding a okraje */
     body {
-        padding: 5px !important;
+        padding: 0 !important; /* Odstraní padding těla */
     }
     
-    /* Hráčské karty: na celou šířku a blízko inputu */
+    #setup-section {
+        margin-bottom: 5px;
+        padding: 10px 5px;
+    }
+
+    /* KARTY HRÁČŮ: Přilepení aktivního hráče k inputu */
     #players-list {
-        flex-direction: column; /* Vertikální stack */
-        gap: 10px; /* Menší mezera mezi kartami */
-        margin-top: 10px; /* Přiblížení k sekci Nastavení/EndGame */
-        margin-bottom: 10px;
+        flex-direction: column; 
+        gap: 0; /* Zcela odstraníme mezery mezi kartami */
+        margin-top: 0; 
+        margin-bottom: 0;
     }
     
     .player-card {
@@ -283,41 +262,49 @@ button:hover {
         max-width: none;
         margin: 0 auto;
         padding: 10px;
+        border-radius: 0; /* Pro plynulý přechod */
+        box-shadow: none;
     }
 
-    /* Zajištění, že aktivní hráč se přesune úplně nahoru a je vidět hned pod ním input */
+    /* KLÍČOVÉ: Aktivní hráč se posune na -2 a dostane nulové okraje */
     .player-card.active {
-        order: -2; /* Nastavíme vyšší prioritu než ostatní karty */
-    }
-
-    /* Vstupní sekce pod aktivním hráčem, snížíme okraje */
-    #dart-input {
-        margin-bottom: 10px;
-        padding: 10px;
+        order: -2; 
+        margin-bottom: 0 !important; 
+        border-top: 3px solid #2ecc71; 
+        border-bottom: 3px solid #2ecc71;
     }
     
-    /* Větší skóre a font pro lepší čitelnost */
-    .player-card .score-remaining strong {
-        font-size: 2.2em;
+    /* Vstupní sekce pod aktivním hráčem, téměř bez mezer */
+    #dart-input {
+        margin-top: 0; /* Klíčové: odstranění mezery nad inputem */
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 0;
+    }
+    
+    /* Tlačítka Multiplikátory */
+    #multiplier-buttons {
+        margin-bottom: 5px; /* Sníženo */
     }
 
-    /* KLÍČOVÁ ZMĚNA: Tlačítka skóre 3 sloupce, ale s menšími mezerami */
+    /* TLAČÍTKA SKÓRE: 6 sloupců s maximálním využitím šířky */
     #score-buttons {
-        grid-template-columns: repeat(6, 1fr) !important; /* Vracíme 6 sloupců, ale zvětšíme šířku */
-        gap: 5px !important; /* Úzké mezery */
-        max-width: 100% !important; /* Maximální využití místa */
-        margin: 10px auto !important;
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 5px !important; 
+        max-width: 100% !important; 
+        padding: 0 5px; /* Trochu paddingu po stranách */
+        margin: 5px auto !important;
     }
     
-    /* Zajištění, že tlačítka mají dostatek místa */
     #score-buttons button {
-        padding: 10px 5px !important; 
-        font-size: 1em !important;
+        padding: 8px 5px !important; /* Sníženo pro menší výšku */
+        font-size: 0.9em !important;
     }
-    
-    /* Zmenšení tlačítek Double/Triple */
-    #multiplier-buttons .multiplier {
-        padding: 10px 10px;
-        font-size: 16px;
-    }
+    
+    /* Zmenšení Undo tlačítka */
+    #dart-input > button {
+        margin-top: 5px;
+        padding: 8px 10px;
+        font-size: 0.9em;
+    }
 }
