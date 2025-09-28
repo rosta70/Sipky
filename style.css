@@ -73,11 +73,11 @@ button:hover {
     color: #8e44ad;
     margin-bottom: 5px; 
 }
-#dart-input h2 { /* Snížení mezer */
+#dart-input h2 { 
     margin-top: 5px; 
     margin-bottom: 5px;
 }
-#dart-input p { /* Snížení mezer */
+#dart-input p { 
     margin: 5px 0;
 }
 .round-needed {
@@ -168,6 +168,12 @@ button:hover {
     order: -1; 
 }
 
+/* Původní styl pro skóre */
+.player-card strong {
+    font-size: 1.5em;
+    color: #c0392b; 
+}
+
 /* VIZUÁLNÍ ZLEPŠENÍ: Zobrazení hodů v kole */
 .player-card .round-throws {
     font-size: 1.1em;
@@ -228,20 +234,11 @@ button:hover {
 /* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (KLÍČOVÁ OPTIMALIZACE) */
 /* ================================================= */
 
-/* Media Query pro menší zařízení (např. mobily na šířku / menší tablety) */
-@media (max-width: 768px) {
-    #score-buttons {
-        grid-template-columns: repeat(5, 1fr); 
-        max-width: 400px;
-    }
-}
-
-/* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
 @media (max-width: 600px) {
     
-    /* Zcela odstraníme globální padding a okraje */
+    /* Využití maximální šířky a nulové okraje */
     body {
-        padding: 0 !important; /* Odstraní padding těla */
+        padding: 0 !important;
     }
     
     #setup-section {
@@ -249,42 +246,38 @@ button:hover {
         padding: 10px 5px;
     }
 
-    /* KARTY HRÁČŮ: Přilepení aktivního hráče k inputu */
+    /* Vstupní sekce pod aktivním hráčem, téměř bez mezer */
+    #dart-input {
+        margin-top: 0;
+        margin-bottom: 0; /* Zcela odstraníme spodní okraj */
+        padding: 10px;
+        border-radius: 0;
+    }
+    
+    /* AKTIVNÍ KARTA: Zcela odstraníme zbytečné mezery */
     #players-list {
         flex-direction: column; 
-        gap: 0; /* Zcela odstraníme mezery mezi kartami */
+        gap: 0; 
         margin-top: 0; 
         margin-bottom: 0;
     }
     
+    /* Aktivní karta se skryje, aby nepřekážela inputu.
+       Její obsah (Zbývá, Hody) se musí vykreslit v JS do #dart-input! */
+    .player-card.active {
+        display: none; /* KLÍČOVÝ KROK: Skryje velkou kartu aktivního hráče */
+    }
+    
+    /* Neaktivní karty: Vždy dole, ale s minimální mezerou nahoře (0) */
     .player-card {
         width: 100%;
         max-width: none;
         margin: 0 auto;
         padding: 10px;
-        border-radius: 0; /* Pro plynulý přechod */
-        box-shadow: none;
-    }
-
-    /* KLÍČOVÉ: Aktivní hráč se posune na -2 a dostane nulové okraje */
-    .player-card.active {
-        order: -2; 
-        margin-bottom: 0 !important; 
-        border-top: 3px solid #2ecc71; 
-        border-bottom: 3px solid #2ecc71;
-    }
-    
-    /* Vstupní sekce pod aktivním hráčem, téměř bez mezer */
-    #dart-input {
-        margin-top: 0; /* Klíčové: odstranění mezery nad inputem */
-        margin-bottom: 10px;
-        padding: 10px;
         border-radius: 0;
-    }
-    
-    /* Tlačítka Multiplikátory */
-    #multiplier-buttons {
-        margin-bottom: 5px; /* Sníženo */
+        box-shadow: none;
+        /* Nastavíme malý okraj pod neaktivními kartami pro oddělení */
+        margin-bottom: 1px;
     }
 
     /* TLAČÍTKA SKÓRE: 6 sloupců s maximálním využitím šířky */
@@ -292,12 +285,12 @@ button:hover {
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
-        padding: 0 5px; /* Trochu paddingu po stranách */
+        padding: 0 5px; 
         margin: 5px auto !important;
     }
     
     #score-buttons button {
-        padding: 8px 5px !important; /* Sníženo pro menší výšku */
+        padding: 8px 5px !important;
         font-size: 0.9em !important;
     }
     
