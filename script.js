@@ -368,9 +368,10 @@ function endRound() {
         gameStarted = false; 
         winner = true;
         gameJustEnded = true;
-    } else if (newScore < 0 || newScore === 1) { 
-        alert(`${player.name} přestřelil! (Bust). Skóre ${player.score} se nemění.`);
-        // V tomto případě se statistika neodečte a skóre se neodečte.
+    } else if (newScore < 0) { // Přestřelení pod nulu
+        alert(`${player.name} přestřelil pod nulu! (Bust). Skóre ${player.score} se nemění.`);
+    } else if (newScore === 1) { // Skóre 1
+        alert(`${player.name} hodil 1. Skóre ${player.score} se nemění (nelze zavřít).`);
     } else {
         player.score = newScore;
     }
