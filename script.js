@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S DELEGOVÁNÍM UDÁLOSTÍ A VYLEPŠENÍMI)
+// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S TTS, OPRAVOU TLAČÍTKA A STATISTIKAMI)
 
 // Globální stav hry
 let players = [];
@@ -44,13 +44,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- DELEGOVÁNÍ UDÁLOSTI KLIKNUTÍ NA TĚLO STRÁNKY ---
-// Toto zajistí spolehlivé fungování dynamicky vytvořeného tlačítka
+// Zajišťuje spolehlivé fungování dynamicky vytvořeného tlačítka
 document.body.addEventListener('click', (event) => {
-    // Kontrola, zda kliknutý prvek má ID 'end-game-btn'
     if (event.target.id === 'end-game-btn') {
         promptEndGame();
     }
 });
+
+
+// --- TTS (TEXT-TO-SPEECH) FUNKCE ---
+
+function speakScore(score) {
+    if ('speechSynthesis' in window) {
+        let text = `${score}`;
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'cs-CZ'; 
+        utterance.rate = 1.2;
+
+        window.speechSynthesis.speak(utterance);
+    } 
+}
 
 
 // --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
@@ -211,7 +225,7 @@ function startGame(value) {
     if (historyButton) historyButton.disabled = true;
     
     const endGameBtn = document.getElementById('end-game-btn');
-    if (endGameBtn) endGameBtn.style.display = 'inline-block'; // Zobrazení tlačítka
+    if (endGameBtn) endGameBtn.style.display = 'inline-block';
     checkSavedGame(); 
 }
 
@@ -264,12 +278,10 @@ function renderPlayers() {
             dartInput.classList.remove('dart-input-hidden');
             dartInput.style.maxHeight = '500px'; 
             dartInput.style.opacity = '1';
-            if (endGameBtn) endGameBtn.style.display = 'inline-block';
         } else {
             dartInput.classList.add('dart-input-hidden');
             dartInput.style.maxHeight = '0';
             dartInput.style.opacity = '0';
-            if (endGameBtn) endGameBtn.style.display = 'none';
         }
     }
 
@@ -395,6 +407,9 @@ function recordThrow(score) {
     
     player.currentRoundThrows[currentThrowIndex] = value; 
     
+    // NOVÉ: Hlasová odezva
+    speakScore(value);
+    
     if (currentMultiplier === 2) {
         player.stats.doubles++;
     } else if (currentMultiplier === 3) {
@@ -492,6 +507,9 @@ function endRound() {
          document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
          const historyButton = document.querySelector('a[href="history.html"] button');
          if (historyButton) historyButton.disabled = false;
+         
+         const endGameBtn = document.getElementById('end-game-btn');
+         if (endGameBtn) endGameBtn.style.display = 'none'; 
          
          checkSavedGame();
     }
