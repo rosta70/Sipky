@@ -65,7 +65,6 @@ button:hover {
 
 /* --- Sekce Zadávání (Dart Input) --- */
 
-/* NOVÝ INDIKÁTOR ŠIPKY: Zajišťuje jasné zobrazení */
 #throw-indicator { 
     display: block;
     font-weight: bold;
@@ -246,41 +245,59 @@ button:hover {
         padding: 10px 5px;
     }
 
-    /* Vstupní sekce pod aktivním hráčem, téměř bez mezer */
+    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER */
+    
     #dart-input {
         margin-top: 0;
-        margin-bottom: 0; /* Zcela odstraníme spodní okraj */
+        margin-bottom: 0;
         padding: 10px;
         border-radius: 0;
     }
-    
-    /* AKTIVNÍ KARTA: Zcela odstraníme zbytečné mezery */
+
     #players-list {
         flex-direction: column; 
         gap: 0; 
         margin-top: 0; 
         margin-bottom: 0;
     }
-    
-    /* Aktivní karta se skryje, aby nepřekážela inputu.
-       Její obsah (Zbývá, Hody) se musí vykreslit v JS do #dart-input! */
+
+    /* KARTA AKTIVNÍHO HRÁČE: Využívá order: -2 k přesunu na samý vršek pod #setup-section */
     .player-card.active {
-        display: none; /* KLÍČOVÝ KROK: Skryje velkou kartu aktivního hráče */
+        display: block; /* OPRAVA: Musí být viditelná! */
+        order: -2; 
+        width: 100%;
+        max-width: none;
+        margin: 0; /* Odstranit vnější okraje */
+        padding: 10px;
+        border-radius: 0;
+        border-top: 3px solid #2ecc71; /* Zvýraznění */
+        border-bottom: 0; /* Zůstává 0, aby se přilepila k inputu */
     }
     
-    /* Neaktivní karty: Vždy dole, ale s minimální mezerou nahoře (0) */
+    /* VŠECHNY KARTY (i aktivní) dostanou minimální svislý okraj */
     .player-card {
         width: 100%;
         max-width: none;
-        margin: 0 auto;
+        margin: 0; 
         padding: 10px;
         border-radius: 0;
         box-shadow: none;
-        /* Nastavíme malý okraj pod neaktivními kartami pro oddělení */
-        margin-bottom: 1px;
+        border-bottom: 1px solid #ddd; /* Oddělení neaktivních karet */
     }
 
-    /* TLAČÍTKA SKÓRE: 6 sloupců s maximálním využitím šířky */
+    /* Pořadí prvků:
+       1. Aktivní karta (order: -2)
+       2. Neaktivní karty
+       3. Sekce zadávání (#dart-input) */
+       
+    /* KLÍČOVÝ KROK: PŘESUNUTÍ INPUTU NAJBLÍŽE */
+    /* Zajišťujeme, že dart-input má nulový top margin */
+    #dart-input {
+        margin-top: 0 !important;
+        margin-bottom: 10px;
+    }
+    
+    /* TLAČÍTKA SKÓRE: Optimalizace pro 6 sloupců */
     #score-buttons {
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
