@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SPOLEHLIVÉ FUNGOVÁNÍ TLAČÍTKA)
+// script.js - CELÝ SOUBOR (Finalizováno: Opravená vazba ID tlačítka přes delegování)
 
 // Globální stav hry
 let players = [];
@@ -21,20 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupSection = document.getElementById('setup-section');
     
-    // 1. Tlačítko pro Ukončení Hry
+    // Tlačítko pro Ukončení Hry
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru';
     endGameBtn.id = 'end-game-btn'; 
     endGameBtn.style.backgroundColor = '#9b59b6';
-    endGameBtn.style.display = 'none';
+    endGameBtn.style.display = 'none'; // Skryté na začátku
     setupSection.appendChild(endGameBtn);
     
-    // ZMĚNA: Přidání posluchače události (EventListener) pro spolehlivost
-    endGameBtn.addEventListener('click', promptEndGame);
-    console.log("Navázána událost 'click' na tlačítko Ukončit hru.");
-
-
-    // 2. Původní tlačítko Export
+    // Původní tlačítko Export
     const exportBtn = document.createElement('button');
     exportBtn.innerText = 'Exportovat JSON Historii';
     exportBtn.onclick = exportHistoryToJSON;
@@ -44,6 +39,16 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPlayers(); 
     updateInputDisplay(); 
     checkSavedGame(); 
+});
+
+
+// --- DELEGOVÁNÍ UDÁLOSTI KLIKNUTÍ NA TĚLO STRÁNKY ---
+// Toto zajistí, že kliknutí je vždy správně navázáno, i když se DOM mění.
+document.body.addEventListener('click', (event) => {
+    // Kontrola, zda kliknutý prvek má ID 'end-game-btn'
+    if (event.target.id === 'end-game-btn') {
+        promptEndGame();
+    }
 });
 
 
