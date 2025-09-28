@@ -151,12 +151,14 @@ button:hover {
 /* Karta jednoho hráče */
 .player-card {
     background-color: #ecf0f1;
-    padding: 15px;
+    /* Redukce paddingu pro úsporu místa na mobilu */
+    padding: 10px; 
     border-radius: 8px;
     width: 250px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 2px solid transparent;
     transition: border-color 0.3s, background-color 0.3s;
+    line-height: 1.3; /* Zmenšení řádkování */
 }
 
 /* Zvýraznění aktivního hráče */
@@ -167,7 +169,14 @@ button:hover {
     order: -1; 
 }
 
-/* Původní styl pro skóre */
+/* Zmenšení vnitřních mezer v aktivní kartě */
+.player-card h3 {
+    margin: 0 0 3px 0;
+    font-size: 1.2em;
+}
+.player-card p {
+    margin: 2px 0; /* Zmenšení mezery mezi odstavci */
+}
 .player-card strong {
     font-size: 1.5em;
     color: #c0392b; 
@@ -179,58 +188,11 @@ button:hover {
     font-weight: 500;
     margin-bottom: 5px;
 }
+/* ... (další styly pro hody) ... */
 
-.player-card .round-throws span {
-    display: inline-block;
-    padding: 2px 5px;
-    margin: 0 2px;
-    border-radius: 3px;
-    transition: all 0.2s;
-}
-
-.player-card .throw-recorded {
-    color: #34495e; 
-}
-
-.player-card .throw-current-input {
-    font-weight: bold;
-    color: white;
-    background-color: #3498db;
-    transform: scale(1.05);
-}
-
-.player-card .throw-pending {
-    color: #bdc3c7; 
-}
-
-.player-card .score-remaining strong {
-    font-size: 1.8em;
-    color: #c0392b;
-    display: block;
-    margin-top: 5px;
-}
-
-
-/* --- Styly pro statistickou tabulku (history.html) --- */
-
-#player-stats-table, .game-detail-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px auto;
-    max-width: 600px;
-}
-#player-stats-table th, #player-stats-table td, .game-detail-table th, .game-detail-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-    font-size: 0.9em;
-}
-#player-stats-table th {
-    background-color: #f2f2f2;
-}
 
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (KLÍČOVÁ OPTIMALIZACE) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (FINÁLNÍ OPTIMALIZACE) */
 /* ================================================= */
 
 @media (max-width: 600px) {
@@ -244,16 +206,8 @@ button:hover {
         margin-bottom: 5px;
         padding: 10px 5px;
     }
-
-    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER */
     
-    #dart-input {
-        margin-top: 0;
-        margin-bottom: 0;
-        padding: 10px;
-        border-radius: 0;
-    }
-
+    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER */
     #players-list {
         flex-direction: column; 
         gap: 0; 
@@ -261,25 +215,25 @@ button:hover {
         margin-bottom: 0;
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře, plná šířka */
+    /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna */
+    #players-list.game-active .player-card:not(.active) {
+        display: none; 
+    }
+
+    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře a bez mezer */
     .player-card.active {
-        display: block; /* Ujistíme se, že je viditelná */
+        display: block; 
         order: -2; 
         width: 100%;
         max-width: none;
-        margin: 0; /* Odstranit vnější okraje */
+        margin: 0; /* Odstraní vnější okraje */
         padding: 10px;
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
-        border-bottom: 0; /* Přilepit k inputu */
+        border-bottom: 0; 
     }
     
-    /* VŠECHNY NEAKTIVNÍ KARTY: Skryjeme je, abychom šetřili místem */
-    .player-card:not(.active) {
-        display: none; /* KLÍČOVÝ KROK: Skryje všechny neaktivní karty */
-    }
-
-    /* Všechny karty (i aktivní) dostanou minimální svislý okraj */
+    /* VŠECHNY KARTY: Pro mobil bez okrajů pro úsporu místa */
     .player-card {
         width: 100%;
         max-width: none;
@@ -287,13 +241,16 @@ button:hover {
         padding: 10px;
         border-radius: 0;
         box-shadow: none;
+        border-bottom: 1px solid #ddd; /* Jemné oddělení neaktivních karet */
     }
 
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
     #dart-input {
         margin-top: 0 !important;
-        margin-bottom: 10px;
-        border-top: 0; /* Odstraníme horní okraj, pokud by tam byl */
+        margin-bottom: 10px; /* Malý spodní okraj */
+        padding: 10px;
+        border-radius: 0;
+        border-top: 0; /* Odstraní horní okraj, aby se přilepil */
     }
     
     /* TLAČÍTKA SKÓRE: Optimalizace pro 6 sloupců */
@@ -302,7 +259,7 @@ button:hover {
         gap: 5px !important; 
         max-width: 100% !important; 
         padding: 0 5px; 
-        margin: 5px auto !important;
+        margin: 5px auto 10px auto !important;
     }
     
     #score-buttons button {
