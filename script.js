@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ VERZE S TTS Jméno + Celkové skóre)
+// script.js - CELÝ SOUBOR (Finalizováno: Opravené sekvenční TTS)
 
 // Globální stav hry
 let players = [];
@@ -51,7 +51,7 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// --- TTS (TEXT-TO-SPEECH) FUNKCE - NYNÍ JAKO speakText ---
+// --- TTS (TEXT-TO-SPEECH) FUNKCE ---
 
 function speakText(text) {
     if ('speechSynthesis' in window) {
@@ -218,7 +218,7 @@ function startGame(value) {
     currentMultiplier = 1;
     history = []; 
     
-    // NOVÉ: Hlasové oznámení prvního hráče
+    // TTS: Hlasové oznámení prvního hráče
     speakText(`Začíná hru ${players[currentPlayerIndex].name}`);
 
     saveState(); 
@@ -412,8 +412,7 @@ function recordThrow(score) {
     
     player.currentRoundThrows[currentThrowIndex] = value; 
     
-    // Hlasová odezva zadané hodnoty
-    speakText(value.toString());
+    // ZAPNUTÍ HLASEM BUDE AŽ V endRound, pokud je to poslední hod!
     
     if (currentMultiplier === 2) {
         player.stats.doubles++;
@@ -429,6 +428,8 @@ function recordThrow(score) {
     if (currentThrowIndex === 3) {
         endRound();
     } else {
+        // TTS: Hlasová odezva pro 1. a 2. hod
+        speakText(value.toString()); 
         updateInputDisplay();
         renderPlayers(); 
     }
@@ -444,6 +445,11 @@ function endRound() {
     let winner = false;
     let gameJustEnded = false; 
     const currentThrows = [...player.currentRoundThrows]; 
+
+    // TTS: Hlasová odezva 3. hodu (který nebyl řešen v recordThrow)
+    if (currentThrows.length === 3) {
+        speakText(currentThrows[2].toString());
+    }
 
     if (newScore === 0) {
         alert(`${player.name} VYHRÁVÁ hru!`);
@@ -508,7 +514,7 @@ function endRound() {
     // Přepínáme hráče VŽDY, pokud hra pokračuje
     if (gameStarted) {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-        // NOVÉ: Hlasové oznámení dalšího hráče
+        // TTS: Hlasové oznámení dalšího hráče
         speakText(`Na řadě je ${players[currentPlayerIndex].name}`);
     }
     
