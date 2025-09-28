@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (s implementací míchání pořadí hráčů)
+// script.js - CELÝ SOUBOR (Finalizováno: Opravená logika Ukončit hru)
 
 // Globální stav hry
 let players = [];
@@ -21,14 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupSection = document.getElementById('setup-section');
     
+    // Tlačítko pro rychlé ukončení/uložení
     const saveAndEndBtn = document.createElement('button');
-    saveAndEndBtn.innerText = 'Ukončit a Uložit hru';
-    saveAndEndBtn.id = 'save-and-end-btn';
-    saveAndEndBtn.onclick = endGameManual;
+    saveAndEndBtn.innerText = 'Ukončit hru';
+    saveAndEndBtn.id = 'end-game-btn'; 
+    saveAndEndBtn.onclick = promptEndGame; // Nová funkce
     saveAndEndBtn.style.backgroundColor = '#9b59b6';
-    saveAndEndBtn.style.display = 'none'; 
+    saveAndEndBtn.style.display = 'none'; // Skryté na začátku
     setupSection.appendChild(saveAndEndBtn);
     
+    // Původní tlačítko Export
     const exportBtn = document.createElement('button');
     exportBtn.innerText = 'Exportovat JSON Historii';
     exportBtn.onclick = exportHistoryToJSON;
@@ -41,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ (Beze změny) ---
+// --- TRVALÉ UKLÁDÁNÍ A NAČÍTÁNÍ ---
 
 function savePlayers() {
     const playerNames = players.map(p => ({ name: p.name }));
@@ -101,8 +103,9 @@ function loadSavedGame(gameState) {
     renderPlayers();
     updateInputDisplay();
     
-    const saveAndEndBtn = document.getElementById('save-and-end-btn');
-    if (saveAndEndBtn) saveAndEndBtn.style.display = 'inline-block';
+    // Zobrazení Ukončit hru
+    const endGameBtn = document.getElementById('end-game-btn');
+    if (endGameBtn) endGameBtn.style.display = 'inline-block';
 
     document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
     const historyButton = document.querySelector('a[href="history.html"] button');
@@ -120,12 +123,10 @@ function shufflePlayers() {
     let currentIndex = players.length;
     let randomIndex;
 
-    // Fisher-Yates shuffle algoritmus
     while (currentIndex !== 0) {
         randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex--;
 
-        // Prohození prvků
         [players[currentIndex], players[randomIndex]] = [
             players[randomIndex], players[currentIndex]
         ];
@@ -169,7 +170,6 @@ function startGame(value) {
         return;
     }
     
-    // NOVÉ: Dotaz na zamíchání pořadí
     if (players.length > 1) {
         const confirmShuffle = confirm("Chcete náhodně zamíchat pořadí hráčů?");
         if (confirmShuffle) {
@@ -201,37 +201,46 @@ function startGame(value) {
     const historyButton = document.querySelector('a[href="history.html"] button');
     if (historyButton) historyButton.disabled = true;
     
-    const saveAndEndBtn = document.getElementById('save-and-end-btn');
-    if (saveAndEndBtn) saveAndEndBtn.style.display = 'inline-block';
+    const endGameBtn = document.getElementById('end-game-btn');
+    if (endGameBtn) endGameBtn.style.display = 'inline-block'; // Zobrazení tlačítka
     checkSavedGame(); 
 }
 
-function endGameManual() {
-    if (!gameStarted) {
-        alert("Nejdříve musíte spustit hru.");
-        return;
-    }
+function promptEndGame() {
+    if (!gameStarted) return;
 
-    if (confirm("Opravdu chcete uložit rozehranou hru a ukončit počítání skóre?")) {
-        saveCurrentGame(); 
+    const action = confirm(
+        "Chcete hru uložit a ukončit, nebo ukončit bez uložení rozehraného stavu?\n\n" +
+        "Stiskněte OK pro ULOŽIT A UKONČIT.\n" +
+        "Stiskněte Storno pro UKONČIT BEZ ULOŽENÍ."
+    );
+
+    if (action) {
+        // ULOŽIT A UKONČIT
+        saveCurrentGame();
         alert("Hra byla uložena! Můžete ji načíst při příštím spuštění.");
-        
-        gameStarted = false;
-        gameValue = 0;
-        currentThrowIndex = 0;
-        currentMultiplier = 1;
-        
-        document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
-        const historyButton = document.querySelector('a[href="history.html"] button');
-        if (historyButton) historyButton.disabled = false;
-        
-        const saveAndEndBtn = document.getElementById('save-and-end-btn');
-        if (saveAndEndBtn) saveAndEndBtn.style.display = 'none';
-        
-        renderPlayers();
-        updateInputDisplay();
-        checkSavedGame();
+    } else {
+        // POUZE UKONČIT (Bez uložení rozehraného stavu do SAVED_GAME_KEY)
+        localStorage.removeItem(SAVED_GAME_KEY);
     }
+    
+    // Reset stavu
+    gameStarted = false;
+    gameValue = 0;
+    currentThrowIndex = 0;
+    currentMultiplier = 1;
+
+    // Zobrazení setup tlačítek a skrytí Ukončit hru
+    document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
+    const historyButton = document.querySelector('a[href="history.html"] button');
+    if (historyButton) historyButton.disabled = false;
+    
+    const endGameBtn = document.getElementById('end-game-btn');
+    if (endGameBtn) endGameBtn.style.display = 'none';
+    
+    renderPlayers();
+    updateInputDisplay();
+    checkSavedGame(); // Zobrazí tlačítko pro načtení, pokud došlo k uložení
 }
 
 
@@ -242,7 +251,6 @@ function renderPlayers() {
     list.innerHTML = '';
     
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
-    // Vytvoření tlačítka, viditelnost řídí checkSavedGame()
     if (!gameStarted) {
         const loadBtn = document.createElement('button');
         loadBtn.innerText = 'Načíst uloženou hru';
@@ -288,8 +296,7 @@ function renderPlayers() {
         `;
         list.appendChild(playerDiv);
     });
-    // Voláme checkSavedGame po renderPlayers, abychom zajistili, že je tlačítko Načíst v DOM
-    checkSavedGame(); 
+    checkSavedGame();
 }
 
 function renderScoreButtons() {
@@ -404,7 +411,7 @@ function endRound() {
         // BUST
         alert(`${player.name} hodil ${newScore === 1 ? '1 (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
         
-        // KOREKCE STATISTIK: Pokud nastal Bust, odečteme Double/Triple statistiky
+        // KOREKCE STATISTIK
         for (let i = 0; i < currentThrows.length; i++) {
             const throwValue = currentThrows[i];
             if (throwValue) {
@@ -462,8 +469,8 @@ function endRound() {
          const historyButton = document.querySelector('a[href="history.html"] button');
          if (historyButton) historyButton.disabled = false;
          
-         const saveAndEndBtn = document.getElementById('save-and-end-btn');
-         if (saveAndEndBtn) saveAndEndBtn.style.display = 'none'; 
+         const endGameBtn = document.getElementById('end-game-btn');
+         if (endGameBtn) endGameBtn.style.display = 'none'; 
          
          checkSavedGame();
     }
@@ -493,7 +500,6 @@ function undoLastThrow() {
         return;
     }
     
-    // Odečtení statistik PŘED vrácením stavu
     const lastState = history[history.length - 1]; 
     const previousPlayer = players[lastState.currentPlayerIndex];
     
@@ -518,18 +524,18 @@ function undoLastThrow() {
     renderPlayers();
     updateInputDisplay();
     
-    const saveAndEndBtn = document.getElementById('save-and-end-btn');
+    const endGameBtn = document.getElementById('end-game-btn');
     const setupButtons = document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])');
     const historyButton = document.querySelector('a[href="history.html"] button');
 
     if (gameStarted) {
         setupButtons.forEach(btn => btn.disabled = true);
         if (historyButton) historyButton.disabled = true;
-        if (saveAndEndBtn) saveAndEndBtn.style.display = 'inline-block';
+        if (endGameBtn) endGameBtn.style.display = 'inline-block';
     } else {
         setupButtons.forEach(btn => btn.disabled = false);
         if (historyButton) historyButton.disabled = false;
-        if (saveAndEndBtn) saveAndEndBtn.style.display = 'none';
+        if (endGameBtn) endGameBtn.style.display = 'none';
     }
     
     checkSavedGame();
