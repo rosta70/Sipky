@@ -65,13 +65,25 @@ button:hover {
 
 /* --- Vylepšení pro sekci zadávání (Dart Input) --- */
 
+/* Vylepšení: Snížení vertikálních mezer v input sekci */
+#dart-input h2 {
+    margin-top: 5px; /* Sníženo */
+    margin-bottom: 5px;
+}
+#dart-input p {
+    margin: 5px 0; /* Sníženo */
+}
+#dart-input > button {
+    margin-top: 10px; /* Sníženo */
+}
+
 /* NOVÝ INDIKÁTOR ŠIPKY: Zajišťuje jasné zobrazení */
 #throw-indicator { 
     display: block;
     font-weight: bold;
     font-size: 1.2em;
     color: #8e44ad; /* Fialová pro šipku */
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* Sníženo */
 }
 
 /* Text pro násobitele a zbývající skóre v kole */
@@ -87,7 +99,7 @@ button:hover {
 
 /* Tlačítka pro násobitele (Double/Triple) */
 #multiplier-buttons {
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Sníženo */
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -112,7 +124,8 @@ button:hover {
 #score-buttons {
     display: grid;
     grid-template-columns: repeat(6, 1fr); /* VÝCHOZÍ: 6 tlačítek v řádku pro desktop */
-    gap: 5px;
+    /* ZVÝŠENÍ MEZER MEZI TLAČÍTKY NA DESKTOPU */
+    gap: 10px; 
     max-width: 500px;
     margin: 10px auto;
 }
@@ -138,7 +151,7 @@ button:hover {
 
 /* Tlačítko Undo */
 #dart-input > button {
-    margin-top: 15px;
+    margin-top: 10px; /* Sníženo */
     background-color: #3498db;
 }
 
@@ -147,7 +160,7 @@ button:hover {
 #players-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 20px; /* VÝCHOZÍ MEZERA PRO DESKTOP */
     justify-content: center;
     margin-top: 20px;
 }
@@ -181,7 +194,7 @@ button:hover {
 .player-card .round-throws {
     font-size: 1.1em;
     font-weight: 500;
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* Sníženo */
 }
 
 .player-card .round-throws span {
@@ -238,7 +251,7 @@ button:hover {
 }
 
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (KLÍČOVÁ OPTIMALIZACE) */
 /* ================================================= */
 
 /* Media Query pro menší zařízení (např. mobily na šířku / menší tablety) */
@@ -251,34 +264,55 @@ button:hover {
 
 /* Media Query pro úzké zobrazení (Mobilní telefony na výšku) */
 @media (max-width: 600px) {
-    
+    
     /* Zmenšení paddingu těla pro maximalizaci místa */
     body {
         padding: 5px !important;
     }
     
-    /* Zvětšení hlavní nadpisy */
-    .player-card h3 {
-        font-size: 1.1em;
+    /* Hráčské karty: na celou šířku a blízko inputu */
+    #players-list {
+        flex-direction: column; /* Vertikální stack */
+        gap: 10px; /* Menší mezera mezi kartami */
+        margin-top: 10px; /* Přiblížení k sekci Nastavení/EndGame */
+        margin-bottom: 10px;
+    }
+    
+    .player-card {
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
+        padding: 10px;
+    }
+
+    /* Zajištění, že aktivní hráč se přesune úplně nahoru a je vidět hned pod ním input */
+    .player-card.active {
+        order: -2; /* Nastavíme vyšší prioritu než ostatní karty */
+    }
+
+    /* Vstupní sekce pod aktivním hráčem, snížíme okraje */
+    #dart-input {
+        margin-bottom: 10px;
+        padding: 10px;
     }
     
     /* Větší skóre a font pro lepší čitelnost */
     .player-card .score-remaining strong {
-        font-size: 2.2em; /* Ještě větší skóre */
+        font-size: 2.2em;
     }
 
-    /* Vynucení změny rozložení na 3 sloupce a zmenšení mezer */
+    /* KLÍČOVÁ ZMĚNA: Tlačítka skóre 3 sloupce, ale s menšími mezerami */
     #score-buttons {
-        grid-template-columns: repeat(3, 1fr) !important; /* 3 sloupce */
-        gap: 8px !important; /* Menší mezera */
-        max-width: 95% !important; /* Použijeme % pro flexibilitu */
+        grid-template-columns: repeat(6, 1fr) !important; /* Vracíme 6 sloupců, ale zvětšíme šířku */
+        gap: 5px !important; /* Úzké mezery */
+        max-width: 100% !important; /* Maximální využití místa */
         margin: 10px auto !important;
     }
     
-    /* Zmenšení paddingu tlačítek pro menší velikost */
+    /* Zajištění, že tlačítka mají dostatek místa */
     #score-buttons button {
         padding: 10px 5px !important; 
-        font-size: 1.1em !important;
+        font-size: 1em !important;
     }
     
     /* Zmenšení tlačítek Double/Triple */
