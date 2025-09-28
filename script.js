@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (Finalizováno: Opravené sekvenční TTS)
+// script.js - CELÝ SOUBOR (FINÁLNÍ OPRAVA PRO SEKVENČNÍ TTS)
 
 // Globální stav hry
 let players = [];
@@ -52,17 +52,17 @@ document.body.addEventListener('click', (event) => {
 
 
 // --- TTS (TEXT-TO-SPEECH) FUNKCE ---
-
+// Vrací objekt utterance, abychom mohli navázat onend událost
 function speakText(text) {
     if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'cs-CZ'; 
         utterance.rate = 1.2;
 
-        // Okamžitě zruší předchozí řeč a začne mluvit novou
-        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
+        return utterance;
     } 
+    return null;
 }
 
 
@@ -412,7 +412,10 @@ function recordThrow(score) {
     
     player.currentRoundThrows[currentThrowIndex] = value; 
     
-    // ZAPNUTÍ HLASEM BUDE AŽ V endRound, pokud je to poslední hod!
+    // TTS: Hlasová odezva pro 1. a 2. hod
+    if (currentThrowIndex < 2) {
+        speakText(value.toString()); 
+    }
     
     if (currentMultiplier === 2) {
         player.stats.doubles++;
@@ -428,8 +431,6 @@ function recordThrow(score) {
     if (currentThrowIndex === 3) {
         endRound();
     } else {
-        // TTS: Hlasová odezva pro 1. a 2. hod
-        speakText(value.toString()); 
         updateInputDisplay();
         renderPlayers(); 
     }
@@ -446,91 +447,106 @@ function endRound() {
     let gameJustEnded = false; 
     const currentThrows = [...player.currentRoundThrows]; 
 
-    // TTS: Hlasová odezva 3. hodu (který nebyl řešen v recordThrow)
-    if (currentThrows.length === 3) {
-        speakText(currentThrows[2].toString());
-    }
+    // --- TTS SEKVENČNÍ LOGIKA ---
+    
+    // 1. Oznámení 3. hodu
+    const lastThrowUtterance = speakText(currentThrows[2].toString());
 
-    if (newScore === 0) {
-        alert(`${player.name} VYHRÁVÁ hru!`);
-        player.score = 0;
-        gameStarted = false; 
-        winner = true;
-        gameJustEnded = true;
-        // TTS: Oznámení výhry a skóre
-        speakText(`${player.name} vítězí! Celkem za kolo ${totalScore}.`); 
-    } else if (newScore < 0 || newScore === 1) { 
-        // BUST
-        alert(`${player.name} hodil ${newScore === 1 ? '1 (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
-        // TTS: Oznámení bustu
-        speakText(`Bust! Skóre ${scoreBeforeRound} zůstává. Celkem za kolo ${totalScore}.`);
+    // 2. Navázání navazujících hlášek přes onend, aby se nepřerušovaly
+    lastThrowUtterance.onend = function() {
+        let announcementText = '';
         
-        // KOREKCE STATISTIK
-        for (let i = 0; i < currentThrows.length; i++) {
-            const throwValue = currentThrows[i];
-            if (throwValue) {
-                if (throwValue % 3 === 0 && throwValue / 3 <= 20 && player.stats.triples > 0) {
-                    player.stats.triples--;
-                } else if (throwValue % 2 === 0 && throwValue / 2 <= 20 && player.stats.doubles > 0) {
-                    player.stats.doubles--;
+        if (newScore === 0) {
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScore}.`; 
+            winner = true;
+            gameJustEnded = true;
+            player.score = 0;
+            gameStarted = false; 
+            
+            alert(`${player.name} VYHRÁVÁ hru!`);
+        } else if (newScore < 0 || newScore === 1) { 
+            // BUST
+            announcementText = `Bust! Skóre ${scoreBeforeRound} zůstává. Celkem za kolo ${totalScore}.`;
+            alert(`${player.name} hodil ${newScore === 1 ? '1 (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
+            
+            // KOREKCE STATISTIK (Stejná logika jako v Else-If, provedená v paměti)
+            for (let i = 0; i < currentThrows.length; i++) {
+                const throwValue = currentThrows[i];
+                if (throwValue) {
+                    if (throwValue % 3 === 0 && throwValue / 3 <= 20 && player.stats.triples > 0) {
+                        player.stats.triples--;
+                    } else if (throwValue % 2 === 0 && throwValue / 2 <= 20 && player.stats.doubles > 0) {
+                        player.stats.doubles--;
+                    }
                 }
             }
+        } else {
+            // Standardní odečet
+            player.score = newScore;
+            announcementText = `Celkem za kolo ${totalScore}.`;
         }
-    } else {
-        player.score = newScore;
-        // TTS: Oznámení celkového skóre kola
-        speakText(`Celkem za kolo ${totalScore}.`);
-    }
-    
-    // Uložení hodu do celkové historie hráče
-    player.throws.push({ 
-        startScore: scoreBeforeRound,
-        endScore: player.score,
-        round: currentThrows, 
-        totalRoundScore: totalScore,
-        bust: (newScore < 0 || newScore === 1)
-    });
-    
-    if (gameJustEnded) {
-        const gameResult = {
-            gameType: gameValue,
-            date: new Date().toISOString().slice(0, 10),
-            winner: winner ? player.name : 'N/A',
-            players: players.map(p => ({
-                name: p.name,
-                finalScore: p.score,
-                allThrows: p.throws,
-                stats: p.stats
-            }))
+        
+        // 3. Spuštění celkového oznámení
+        const nextAnnouncement = speakText(announcementText);
+        
+        // 4. Navázání oznámení dalšího hráče
+        nextAnnouncement.onend = function() {
+            if (gameStarted) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                speakText(`Na řadě je ${players[currentPlayerIndex].name}`);
+            }
+            
+            // Dokončení logiky kola (ukládání, renderování)
+            finalizeRoundLogic(player, scoreBeforeRound, totalScore, currentThrows, newScore, gameJustEnded);
         };
-        saveGameHistory(gameResult); 
-        localStorage.removeItem(SAVED_GAME_KEY); 
-    }
+    };
     
-    // Reset pro další kolo
-    player.currentRoundThrows = [0, 0, 0];
-    currentThrowIndex = 0;
-    
-    // Přepínáme hráče VŽDY, pokud hra pokračuje
-    if (gameStarted) {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-        // TTS: Hlasové oznámení dalšího hráče
-        speakText(`Na řadě je ${players[currentPlayerIndex].name}`);
-    }
-    
-    saveState(); 
-    renderPlayers();
-    updateInputDisplay();
+    // Dočasná funkce pro dokončení logiky, aby se nezavolala předčasně
+    function finalizeRoundLogic(player, scoreBeforeRound, totalScore, currentThrows, newScore, gameJustEnded) {
+        
+        // Uložení hodu do celkové historie hráče
+        player.throws.push({ 
+            startScore: scoreBeforeRound,
+            endScore: player.score,
+            round: currentThrows, 
+            totalRoundScore: totalScore,
+            bust: (newScore < 0 || newScore === 1)
+        });
+        
+        if (gameJustEnded) {
+            const gameResult = {
+                gameType: gameValue,
+                date: new Date().toISOString().slice(0, 10),
+                winner: winner ? player.name : 'N/A',
+                players: players.map(p => ({
+                    name: p.name,
+                    finalScore: p.score,
+                    allThrows: p.throws,
+                    stats: p.stats
+                }))
+            };
+            saveGameHistory(gameResult); 
+            localStorage.removeItem(SAVED_GAME_KEY); 
+        }
+        
+        // Reset pro další kolo
+        player.currentRoundThrows = [0, 0, 0];
+        currentThrowIndex = 0;
+        
+        saveState(); 
+        renderPlayers();
+        updateInputDisplay();
 
-    if (!gameStarted) {
-         document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
-         const historyButton = document.querySelector('a[href="history.html"] button');
-         if (historyButton) historyButton.disabled = false;
-         
-         const endGameBtn = document.getElementById('end-game-btn');
-         if (endGameBtn) endGameBtn.style.display = 'none'; 
-         
-         checkSavedGame();
+        if (!gameStarted) {
+             document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
+             const historyButton = document.querySelector('a[href="history.html"] button');
+             if (historyButton) historyButton.disabled = false;
+             
+             const endGameBtn = document.getElementById('end-game-btn');
+             if (endGameBtn) endGameBtn.style.display = 'none'; 
+             
+             checkSavedGame();
+        }
     }
 }
 
@@ -590,7 +606,6 @@ function undoLastThrow() {
         setupButtons.forEach(btn => btn.disabled = true);
         if (historyButton) historyButton.disabled = true;
         if (endGameBtn) endGameBtn.style.display = 'inline-block';
-        // TTS: Oznámení aktuálního hráče po Undo
         speakText(`Vráceno. Na řadě je ${players[currentPlayerIndex].name}`);
     } else {
         setupButtons.forEach(btn => btn.disabled = false);
