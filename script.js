@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupSection = document.getElementById('setup-section');
     
-    // Tlačítko pro rychlé ukončení/uložení
-    const endGameBtn = document.createElement('button'); // Změna proměnné
+    // Tlačítko pro Ukončení Hry
+    const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru';
     endGameBtn.id = 'end-game-btn'; 
-    endGameBtn.onclick = promptEndGame; // Nová funkce
+    endGameBtn.onclick = promptEndGame; // Přímé navázání funkce
     endGameBtn.style.backgroundColor = '#9b59b6';
     endGameBtn.style.display = 'none'; // Skryté na začátku
     setupSection.appendChild(endGameBtn);
@@ -87,7 +87,6 @@ function checkSavedGame() {
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     const loadBtn = document.getElementById('load-game-btn'); 
 
-    // Zajištění viditelnosti tlačítka pro načtení
     if (loadBtn) {
         loadBtn.style.display = (savedGame && !gameStarted) ? 'inline-block' : 'none';
     }
@@ -104,7 +103,6 @@ function loadSavedGame(gameState) {
     renderPlayers();
     updateInputDisplay();
     
-    // Zobrazení Ukončit hru
     const endGameBtn = document.getElementById('end-game-btn');
     if (endGameBtn) endGameBtn.style.display = 'inline-block';
 
@@ -241,7 +239,7 @@ function promptEndGame() {
     
     renderPlayers();
     updateInputDisplay();
-    checkSavedGame(); 
+    checkSavedGame(); // Zobrazí tlačítko pro načtení, pokud došlo k uložení
 }
 
 
