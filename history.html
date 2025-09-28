@@ -26,7 +26,7 @@
     </div>
 
     <div id="player-overview-container">
-        <h2>Přehled Hráčů</h2>
+        <h2>Přehled Hráčů a Statistiky</h2>
         <table id="player-stats-table"></table>
     </div>
 
@@ -44,7 +44,7 @@
         });
 
         const HISTORY_STORAGE_KEY = 'darts_scorer_history';
-        const SAVED_GAME_KEY = 'darts_scorer_saved_game'; // Klíč pro rozehranou hru
+        const SAVED_GAME_KEY = 'darts_scorer_saved_game';
 
         // --- HLAVNÍ FUNKCE PRO NAČTENÍ A VYKRESLENÍ ---
         function loadHistory() {
@@ -62,7 +62,7 @@
             }
             document.getElementById('export-history-btn').disabled = false;
 
-            // 1. Přehled hráčů a výher
+            // 1. Přehled hráčů a statistik
             renderPlayerOverview(allHistory, overviewTable);
             
             // 2. Detailní tabulka her
@@ -74,35 +74,64 @@
             
             allHistory.forEach(game => {
                 const winnerName = game.winner;
-                
+                const gameType = game.gameType;
+
                 game.players.forEach(p => {
                     if (!stats[p.name]) {
-                        stats[p.name] = { wins: 0, games: 0, totalDoubles: 0, totalTriples: 0 };
+                        stats[p.name] = { 
+                            wins: 0, 
+                            games: 0, 
+                            totalScore: 0,
+                            totalThrows: 0, 
+                            totalDoubles: 0, 
+                            totalTriples: 0 
+                        };
                     }
                     stats[p.name].games++;
                     if (p.name === winnerName) {
                         stats[p.name].wins++;
                     }
-                    // Sčítání statistik ze všech her
+
+                    // Sčítání statistik pro PPD
+                    const throwsCount = p.allThrows.length * 3; 
+                    const scoreDeducted = gameType * (throwsCount / 3); // Zjednodušený výpočet skóre
+                    
+                    // Bezpečně sčítáme pouze hody, které se odečetly (startScore - endScore)
+                    p.allThrows.forEach(round => {
+                        stats[p.name].totalScore += (round.startScore - round.endScore);
+                    });
+                    
+                    stats[p.name].totalThrows += throwsCount;
+                    
+                    // Sčítání Double/Triple
                     stats[p.name].totalDoubles += p.stats ? p.stats.doubles : 0;
                     stats[p.name].totalTriples += p.stats ? p.stats.triples : 0;
                 });
             });
 
             // Vytvoření HTML tabulky
-            let html = '<tr><th>Jméno</th><th>Výhry</th><th>Odehrané hry</th><th>Celkem Double</th><th>Celkem Triple</th></tr>';
+            let html = '<tr><th>Jméno</th><th>Výhry</th><th>Odehrané hry</th><th>Průměr/3 šipky</th><th>% Double</th><th>% Triple</th></tr>';
             
             const sortedPlayers = Object.keys(stats).sort((a, b) => stats[b].wins - stats[a].wins);
 
             sortedPlayers.forEach(name => {
                 const s = stats[name];
+                
+                // Výpočty statistik
+                const avgPerDart = s.totalThrows > 0 ? (s.totalScore / s.totalThrows) * 3 : 0;
+                const ppd = avgPerDart.toFixed(2);
+                
+                const doublePct = s.totalThrows > 0 ? (s.totalDoubles / s.totalThrows) * 100 : 0;
+                const triplePct = s.totalThrows > 0 ? (s.totalTriples / s.totalThrows) * 100 : 0;
+                
                 html += `
                     <tr>
                         <td><strong>${name}</strong></td>
                         <td>${s.wins}</td>
                         <td>${s.games}</td>
-                        <td>${s.totalDoubles}</td>
-                        <td>${s.totalTriples}</td>
+                        <td>${ppd}</td>
+                        <td>${doublePct.toFixed(1)}%</td>
+                        <td>${triplePct.toFixed(1)}%</td>
                     </tr>
                 `;
             });
@@ -113,8 +142,7 @@
             allHistory.reverse().forEach((game, index) => {
                 const gameNumber = allHistory.length - index; 
 
-                // Detailní tabulka pro každou hru
-                let playerDetails = `<table class="game-detail-table"><tr><th>Hráč</th><th>Zbývalo</th><th>Double/Triple</th></tr>`;
+                let playerDetails = `<table class="game-detail-table"><tr><th>Hráč</th><th>Zbývalo</th><th>Double</th><th>Triple</th></tr>`;
                 game.players.forEach(p => {
                     const d = p.stats ? p.stats.doubles : 'N/A';
                     const t = p.stats ? p.stats.triples : 'N/A';
@@ -122,7 +150,8 @@
                         <tr>
                             <td>${p.name}</td>
                             <td>${p.finalScore}</td>
-                            <td>D: ${d}, T: ${t}</td>
+                            <td>${d}</td>
+                            <td>${t}</td>
                         </tr>
                     `;
                 });
@@ -138,43 +167,15 @@
                 `;
                 containerElement.appendChild(gameElement);
             });
-            
-            // Přidání stylů pro tabulky
-            const style = document.createElement('style');
-            style.innerHTML = `
-                .history-card {
-                    background-color: #ffffff;
-                    padding: 15px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    margin: 15px auto;
-                    max-width: 600px;
-                    border-left: 5px solid #1a5273;
-                }
-                #player-stats-table, .game-detail-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 10px;
-                }
-                #player-stats-table th, #player-stats-table td, .game-detail-table th, .game-detail-table td {
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: left;
-                }
-                #player-stats-table th {
-                    background-color: #f2f2f2;
-                }
-            `;
-            document.head.appendChild(style);
         }
 
-        // --- FUNKCE PRO EXPORT / IMPORT ---
+
+        // --- FUNKCE PRO EXPORT / IMPORT / SMAZÁNÍ ---
         
         function exportHistory() {
             const data = localStorage.getItem(HISTORY_STORAGE_KEY);
             const savedGame = localStorage.getItem(SAVED_GAME_KEY);
             
-            // Exportujeme jak historii, tak rozehranou hru do JEDNOHO souboru pro snadný import
             const exportData = {
                 history: JSON.parse(data || '[]'),
                 savedGame: savedGame ? JSON.parse(savedGame) : null
@@ -201,15 +202,13 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    if (!importedData.history) {
+                    if (!importedData.history || !Array.isArray(importedData.history)) {
                         alert("Chyba: Nahraný soubor neobsahuje platnou strukturu exportu (chybí 'history' pole).");
                         return;
                     }
                     
-                    // 1. Import historie
                     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(importedData.history));
                     
-                    // 2. Import rozehrané hry, pokud existuje
                     if (importedData.savedGame) {
                         localStorage.setItem(SAVED_GAME_KEY, JSON.stringify(importedData.savedGame));
                         alert(`Historie ${importedData.history.length} her a rozehraná hra byly úspěšně naimportovány.`);
