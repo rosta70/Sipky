@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (ZÁKLADNÍ, STABILNÍ VERZE PRO KLÁVESNICI A VIDITELNOST HRÁČŮ)
+// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S KOMPLETNÍ LOGIKOU)
 
 // Globální stav hry
 let players = [];
@@ -71,7 +71,7 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// --- UKLÁDÁNÍ A NAČÍTÁNÍ (Zkráceno) ---
+// --- UKLÁDÁNÍ A NAČÍTÁNÍ ---
 function savePlayers() { const playerNames = players.map(p => ({ name: p.name })); localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(playerNames)); }
 function loadPlayers() { const storedPlayers = localStorage.getItem(PLAYERS_STORAGE_KEY); if (storedPlayers) { players = JSON.parse(storedPlayers).map(p => ({ name: p.name, score: 0, throws: [], currentRoundThrows: [0, 0, 0], stats: { doubles: 0, triples: 0 } })); } }
 function saveGameHistory(newEntry) { const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]'); allHistory.push(newEntry); localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory)); }
@@ -92,7 +92,13 @@ function loadSavedGame(gameState) {
 
 
 // --- NASTAVENÍ HRY A HRÁČE ---
-function shufflePlayers() { /* ... */ }
+function shufflePlayers() { 
+    let currentIndex = players.length; let randomIndex;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex); currentIndex--;
+        [players[currentIndex], players[randomIndex]] = [players[randomIndex], players[currentIndex]];
+    }
+}
 function addPlayer() { 
     if (gameStarted) return;
     const name = prompt("Zadejte jméno hráče:");
@@ -267,7 +273,6 @@ function renderScoreButtons() {
         const btn = document.createElement('button');
         btn.innerText = score;
         if (score === 0) { btn.classList.add('zero-button'); }
-        // DŮLEŽITÉ: Použití anonymní funkce zajišťuje správné volání
         btn.onclick = () => recordThrow(score); 
         container.appendChild(btn);
     });
@@ -356,7 +361,209 @@ function recordThrow(score) {
 }
 
 
-function endRound() { /* ... */ }
-function saveState() { /* ... */ }
-function undoLastThrow() { /* ... */ }
-function exportHistoryToJSON() { /* ... */ }
+function endRound() {
+    const player = players[currentPlayerIndex];
+    const totalScore = player.currentRoundThrows.reduce((a, b) => a + b, 0);
+    const scoreBeforeRound = player.score;
+    const newScore = scoreBeforeRound - totalScore; 
+    let winner = false;
+    let gameJustEnded = false; 
+    const currentThrows = [...player.currentRoundThrows]; 
+
+    // --- TTS SEKVENČNÍ LOGIKA ---
+    
+    // 1. Oznámení 3. hodu (čtení po cifrách)
+    const lastThrowText = getCzechNumberByDigits(currentThrows[2]);
+    const lastThrowUtterance = speakText(lastThrowText);
+
+    // 2. Navázání navazujících hlášek přes onend
+    lastThrowUtterance.onend = function() {
+        let announcementText = '';
+        
+        const totalScoreText = getCzechNumberByDigits(totalScore);
+        const scoreBeforeRoundText = getCzechNumberByDigits(scoreBeforeRound);
+
+        if (newScore === 0) {
+            announcementText = `${player.name} vítězí! Celkem za kolo ${totalScoreText}.`; 
+            winner = true;
+            gameJustEnded = true;
+            player.score = 0;
+            gameStarted = false; 
+            
+            alert(`${player.name} VYHRÁVÁ hru!`);
+        } else if (newScore < 0 || newScore === 1) { 
+            // BUST
+            announcementText = `Bust! Skóre ${scoreBeforeRoundText} zůstává. Celkem za kolo ${totalScoreText}.`;
+            alert(`${player.name} hodil ${newScore === 1 ? 'jedna (nelze zavřít)' : 'pod nulu'}! Kolo se nepočítá (Bust).`);
+            
+            // KOREKCE STATISTIK
+            for (let i = 0; i < currentThrows.length; i++) {
+                const throwValue = currentThrows[i];
+                if (throwValue) {
+                    if (throwValue % 3 === 0 && throwValue / 3 <= 20 && player.stats.triples > 0) {
+                        player.stats.triples--;
+                    } else if (throwValue % 2 === 0 && throwValue / 2 <= 20 && player.stats.doubles > 0) {
+                        player.stats.doubles--;
+                    }
+                }
+            }
+        } else {
+            // Standardní odečet
+            player.score = newScore;
+            announcementText = `Celkem za kolo ${totalScoreText}. Zbývá ${getCzechNumberByDigits(player.score)}`;
+        }
+        
+        // 3. Spuštění celkového oznámení
+        const nextAnnouncement = speakText(announcementText);
+        
+        // 4. Navázání oznámení dalšího hráče
+        nextAnnouncement.onend = function() {
+            if (gameStarted) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                speakText(`Na řadě je ${players[currentPlayerIndex].name}`);
+            }
+            
+            // Dokončení logiky kola (ukládání, renderování)
+            finalizeRoundLogic(player, scoreBeforeRound, totalScore, currentThrows, newScore, gameJustEnded);
+        };
+    };
+    
+    // Dočasná funkce pro dokončení logiky, aby se nezavolala předčasně
+    function finalizeRoundLogic(player, scoreBeforeRound, totalScore, currentThrows, newScore, gameJustEnded) {
+        
+        // Uložení hodu do celkové historie hráče
+        player.throws.push({ 
+            startScore: scoreBeforeRound,
+            endScore: player.score,
+            round: currentThrows, 
+            totalRoundScore: totalScore,
+            bust: (newScore < 0 || newScore === 1)
+        });
+        
+        if (gameJustEnded) {
+            const gameResult = {
+                gameType: gameValue,
+                date: new Date().toISOString().slice(0, 10),
+                winner: winner ? player.name : 'N/A',
+                players: players.map(p => ({
+                    name: p.name,
+                    finalScore: p.score,
+                    allThrows: p.throws,
+                    stats: p.stats
+                }))
+            };
+            saveGameHistory(gameResult); 
+            localStorage.removeItem(SAVED_GAME_KEY); 
+        }
+        
+        // Reset pro další kolo
+        player.currentRoundThrows = [0, 0, 0];
+        currentThrowIndex = 0;
+        
+        saveState(); 
+        renderPlayers();
+        updateInputDisplay();
+
+        if (!gameStarted) {
+             document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
+             const historyButton = document.querySelector('a[href="history.html"] button');
+             if (historyButton) historyButton.disabled = false;
+             
+             const endGameBtn = document.getElementById('end-game-btn');
+             if (endGameBtn) endGameBtn.style.display = 'none'; 
+             
+             checkSavedGame();
+        }
+    }
+}
+
+
+function saveState() {
+    const state = {
+        players: JSON.parse(JSON.stringify(players)),
+        currentPlayerIndex: currentPlayerIndex,
+        currentThrowIndex: currentThrowIndex,
+        currentMultiplier: currentMultiplier,
+        gameStarted: gameStarted 
+    };
+    history.push(state);
+    
+    if (history.length > 50) { 
+        history.shift();
+    }
+    if (gameStarted) saveCurrentGame();
+}
+
+function undoLastThrow() {
+    if (history.length <= 1) {
+        alert("Nelze vrátit zpět, toto je první stav hry!");
+        return;
+    }
+    
+    const lastState = history[history.length - 1]; 
+    const previousPlayer = players[lastState.currentPlayerIndex];
+    
+    const lastThrowValue = lastState.players[lastState.currentPlayerIndex].currentRoundThrows[lastState.currentThrowIndex - 1];
+    if (lastThrowValue) {
+        if (lastThrowValue % 3 === 0 && lastThrowValue / 3 <= 20 && previousPlayer.stats.triples > 0) {
+            previousPlayer.stats.triples--;
+        } else if (lastThrowValue % 2 === 0 && lastThrowValue / 2 <= 20 && previousPlayer.stats.doubles > 0) {
+            previousPlayer.stats.doubles--;
+        }
+    }
+    
+    history.pop(); 
+    const prevState = history[history.length - 1]; 
+
+    players = JSON.parse(JSON.stringify(prevState.players));
+    currentPlayerIndex = prevState.currentPlayerIndex;
+    currentThrowIndex = prevState.currentThrowIndex;
+    currentMultiplier = prevState.currentMultiplier;
+    gameStarted = prevState.gameStarted;
+
+    renderPlayers();
+    updateInputDisplay();
+    
+    const endGameBtn = document.getElementById('end-game-btn');
+    const setupButtons = document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])');
+    const historyButton = document.querySelector('a[href="history.html"] button');
+
+    if (gameStarted) {
+        setupButtons.forEach(btn => btn.disabled = true);
+        if (historyButton) historyButton.disabled = true;
+        if (endGameBtn) endGameBtn.style.display = 'inline-block';
+        speakText(`Vráceno. Na řadě je ${players[currentPlayerIndex].name}`);
+        document.getElementById('players-list').classList.add('game-active');
+    } else {
+        setupButtons.forEach(btn => btn.disabled = false);
+        if (historyButton) historyButton.disabled = false;
+        if (endGameBtn) endGameBtn.style.display = 'none';
+        document.getElementById('players-list').classList.remove('game-active');
+    }
+    
+    checkSavedGame();
+}
+
+function exportHistoryToJSON() {
+    if (players.every(p => p.throws.length === 0)) {
+        alert("Žádné hody k exportování. Zahrajte alespoň jedno kolo.");
+        return;
+    }
+    
+    const data = JSON.stringify(players.map(p => ({
+        name: p.name,
+        gameType: gameValue,
+        finalScore: p.score,
+        history: p.throws
+    })), null, 2);
+
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sipky_historie_aktualni_hry_${new Date().toISOString().slice(0, 10)}.json`; 
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
