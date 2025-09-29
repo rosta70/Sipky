@@ -179,6 +179,8 @@ function loadSavedGame(gameState) {
     
     speakText(`Hra načtena. Na řadě je ${players[currentPlayerIndex].name}`);
     
+    // Aplikace třídy na body i players-list
+    document.body.classList.add('game-active');
     document.getElementById('players-list').classList.add('game-active');
 
     localStorage.removeItem(SAVED_GAME_KEY); 
@@ -266,6 +268,7 @@ function startGame(value) {
     speakText(`Začíná hru ${gameText} na nulu. Hází ${players[currentPlayerIndex].name}`);
 
     // KLÍČOVÝ KROK: PŘIDÁNÍ TŘÍDY PRO MOBILNÍ SKRYTÍ NEAKTIVNÍCH HRÁČŮ
+    document.body.classList.add('game-active');
     document.getElementById('players-list').classList.add('game-active');
 
     saveState(); 
@@ -303,6 +306,7 @@ function promptEndGame() {
     currentMultiplier = 1;
 
     // KLÍČOVÝ KROK: ODEBRÁNÍ TŘÍDY pro zobrazení všech hráčů
+    document.body.classList.remove('game-active');
     document.getElementById('players-list').classList.remove('game-active');
 
     document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
@@ -416,11 +420,11 @@ function renderPlayers() {
             infoText += `<p class="round-throws">Hody v kole: ${throws}</p>`;
             infoText += `<p>Potřeba: <strong class="round-needed">${required}</strong> (Součet: ${currentRoundSum})</p>`;
         } else if (gameStarted && !isCurrent) {
-            // Neaktivní hráči - Vykreslí jen skóre kola pro desktop/tablet
+            // Neaktivní hráči (Desktop/Tablet)
             const lastRoundScore = player.throws.length > 0 ? player.throws[player.throws.length - 1].totalRoundScore : '-';
             infoText = `<p class="last-round-score">Poslední kolo: ${lastRoundScore}</p>`;
         } else if (!gameStarted) {
-            // Před hrou neukazovat hody - jen jméno a tlačítko Odebrat
+            // Před hrou - jen jméno a tlačítko Odebrat
             infoText = '';
         }
         
@@ -693,11 +697,13 @@ function undoLastThrow() {
         if (historyButton) historyButton.disabled = true;
         if (endGameBtn) endGameBtn.style.display = 'inline-block';
         speakText(`Vráceno. Na řadě je ${players[currentPlayerIndex].name}`);
+        document.body.classList.add('game-active');
         document.getElementById('players-list').classList.add('game-active');
     } else {
         setupButtons.forEach(btn => btn.disabled = false);
         if (historyButton) historyButton.disabled = false;
         if (endGameBtn) endGameBtn.style.display = 'none';
+        document.body.classList.remove('game-active');
         document.getElementById('players-list').classList.remove('game-active');
     }
     
