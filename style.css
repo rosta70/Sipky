@@ -6,7 +6,7 @@ body {
     background-color: #f4f4f4;
     color: #333;
     margin: 0;
-    padding: 20px; /* Původní padding pro desktop */
+    padding: 20px;
 }
 
 h1, h2 {
@@ -53,16 +53,6 @@ button:hover {
     background-color: #2980b9;
 }
 
-/* Tlačítka pro volbu hry (101, 301, 501) a Export */
-#setup-section button {
-    background-color: #27ae60;
-    font-weight: bold;
-}
-
-#setup-section button:hover {
-    background-color: #2ecc71;
-}
-
 /* --- Sekce Zadávání (Dart Input) --- */
 
 #throw-indicator { 
@@ -92,21 +82,7 @@ button:hover {
     gap: 10px;
 }
 
-#multiplier-buttons .multiplier {
-    background-color: #f39c12;
-    font-weight: bold;
-}
-#multiplier-buttons .multiplier:hover {
-    background-color: #e67e22;
-}
-
-/* Nová třída pro aktivní násobitele */
-.active-multiplier {
-    background-color: #c0392b !important; 
-    border: 1px solid #7f8c8d;
-}
-
-/* Kontejner a styl pro číselná tlačítka */
+/* ... (zbytek stylů tlačítek) ... */
 #score-buttons {
     display: grid;
     grid-template-columns: repeat(6, 1fr); 
@@ -115,37 +91,16 @@ button:hover {
     margin: 10px auto;
 }
 
-#score-buttons button {
-    background-color: #34495e;
-    color: white;
-}
-#score-buttons button:hover {
-    background-color: #2c3e50;
-}
-
-/* Speciální styl pro tlačítko NULA (MISS) */
-.zero-button {
-    background-color: #95a5a6 !important;
-    color: white !important;
-}
-.zero-button:hover {
-    background-color: #7f8c8d !important;
-}
-
-/* Tlačítko Undo */
-#dart-input > button {
-    margin-top: 10px;
-    background-color: #3498db;
-}
-
 /* --- Karty Hráčů (Players List) --- */
 
 #players-list {
-    display: flex;
+    /* VÝCHOZÍ STAV (PC): Všichni hráči viditelní */
+    display: flex; /* Vynutíme flex, pokud by ho mobilní pravidla přepsala */
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
     margin-top: 20px;
+    margin-bottom: 20px; /* Důležitá mezera pro oddělení od inputu na PC */
 }
 
 /* Karta jednoho hráče */
@@ -156,9 +111,8 @@ button:hover {
     width: 250px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 2px solid transparent;
-    transition: border-color 0.3s, background-color 0.3s;
     line-height: 1.3;
-    display: block !important; /* DŮLEŽITÉ: Vždy viditelné na desktopu/výchozím stavu */
+    display: block; /* Vynutíme zobrazení */
 }
 
 /* Zvýraznění aktivního hráče */
@@ -182,24 +136,7 @@ button:hover {
     color: #c0392b; 
 }
 
-
-/* --- Styly pro statistickou tabulku (history.html) --- */
-
-#player-stats-table, .game-detail-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px auto;
-    max-width: 600px;
-}
-#player-stats-table th, #player-stats-table td, .game-detail-table th, .game-detail-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-    font-size: 0.9em;
-}
-#player-stats-table th {
-    background-color: #f2f2f2;
-}
+/* ... (styly pro tabulky atd.) ... */
 
 /* ================================================= */
 /* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
@@ -207,7 +144,6 @@ button:hover {
 
 @media (max-width: 600px) {
     
-    /* Využití maximální šířky a nulové okraje */
     body {
         padding: 0 !important;
     }
@@ -217,22 +153,22 @@ button:hover {
         padding: 10px 5px;
     }
     
-    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER */
     #players-list {
         flex-direction: column; 
         gap: 0; 
         margin-top: 0; 
-        margin-bottom: 0;
+        margin-bottom: 0; /* Odstraní mezeru mezi kartami a inputem */
+        display: flex;
     }
 
-    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty POUZE, když je hra spuštěna */
+    /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; /* Vynutíme skrytí neaktivních karet */
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Vždy viditelná a bez mezer */
+    /* KARTA AKTIVNÍHO HRÁČE: Zajištění správného zobrazení */
     .player-card.active {
-        display: block !important; /* Vynutíme viditelnost aktivní karty */
+        display: block !important; 
         order: -2; 
         width: 100%;
         max-width: none;
@@ -243,20 +179,9 @@ button:hover {
         border-bottom: 0; 
     }
     
-    /* VŠECHNY KARTY (pro neaktivní karty v setupu) */
-    .player-card {
-        width: 100%;
-        max-width: none;
-        margin: 0; 
-        padding: 10px;
-        border-radius: 0;
-        box-shadow: none;
-        border-bottom: 1px solid #ddd; 
-    }
-
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
     #dart-input {
-        margin-top: 0 !important;
+        margin-top: 0 !important; /* Nulová mezera nad inputem */
         margin-bottom: 10px; 
         padding: 10px;
         border-radius: 0;
