@@ -61,9 +61,13 @@ document.addEventListener('DOMContentLoaded', () => {
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
     endGameContainer.appendChild(endGameBtn); 
     
-    // KLÍČOVÁ OPRAVA: PŘÍMÉ NAVÁZÁNÍ UDÁLOSTI K TLAČÍTKU
-    endGameBtn.addEventListener('click', promptEndGame); 
-    
+    // NOVÉ DELEGOVÁNÍ: Připojíme event listener k celému kontejneru
+    endGameContainer.addEventListener('click', (event) => {
+        if (event.target.id === 'end-game-btn') {
+            promptEndGame();
+        }
+    });
+
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
     const summaryDiv = document.createElement('div');
@@ -86,8 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInputDisplay(); 
     checkSavedGame(); 
 });
-
-// Původní delegování přes document.body bylo odstraněno a nahrazeno přímou vazbou.
 
 
 // --- NOVÁ FUNKCE: VYMAZÁNÍ VŠECH DAT ---
