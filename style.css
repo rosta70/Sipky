@@ -1,12 +1,12 @@
-/* style.css - CELÝ SOUBOR */
+/* style.css - CELÝ SOUBOR (RADIKÁLNĚ ZJEDNODUŠENÝ PŘÍSTUP) */
 
-/* --- Základní Styly a Reset (Desktop) --- */
+/* --- Základní Styly (Desktop) --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
     margin: 0;
-    padding: 20px; /* Původní padding pro desktop */
+    padding: 20px;
 }
 
 h1, h2 {
@@ -14,81 +14,64 @@ h1, h2 {
     text-align: center;
 }
 
-/* Sekce nastavení a vstupu */
-#setup-section, #dart-input {
-    background-color: #ffffff;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    text-align: center;
-}
-/* ... (zbytek standardních desktopových stylů, které fungují) ... */
+/* ... (styly pro setup-section, dart-input, tlačítka atd. - ponechány) ... */
 
-/* --- TLAČÍTKA --- */
-button {
-    padding: 10px 15px;
-    margin: 5px;
+/* Třída pro skrytí vstupní sekce */
+.dart-input-hidden {
+    max-height: 0 !important; 
+    opacity: 0;
+    padding: 0 15px !important; 
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-    background-color: #3498db; 
-    color: white;
+    box-shadow: none;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
 }
 
-#setup-section button {
-    background-color: #27ae60; 
-    font-weight: bold;
-}
-#multiplier-buttons button {
-    background-color: #f39c12; 
-    font-weight: bold;
-}
-#score-buttons button {
-    background-color: #34495e; 
-    color: white;
-}
-.zero-button {
-    background-color: #95a5a6 !important;
-}
-.active-multiplier {
-    background-color: #c0392b !important; 
-}
+/* --- TLAČÍTKA: Vizuální styly --- */
+button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: #3498db; color: white; }
+#setup-section button { background-color: #27ae60; }
+#multiplier-buttons button { background-color: #f39c12; }
+#score-buttons button { background-color: #34495e; }
+.zero-button { background-color: #95a5a6 !important; }
+.active-multiplier { background-color: #c0392b !important; }
 
+/* --- Karty Hráčů --- */
 
-/* --- Karty Hráčů (Players List) --- */
 #players-list {
-    display: flex;
+    display: flex; /* Pro desktop */
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
 .player-card {
     background-color: #ecf0f1;
     padding: 10px; 
     border-radius: 8px;
     width: 250px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    display: block; 
+    line-height: 1.3;
+    display: block; /* Zajišťuje viditelnost na desktopu/před hrou */
 }
 .player-card.active {
-    border-color: #2ecc71;
+    border: 3px solid #2ecc71;
     background-color: #d7f5e3;
     order: -1; 
 }
+.player-card strong { font-size: 1.5em; color: #c0392b; }
 
 /* --- NOVÝ BLOK: Mini-shnutí skóre pro mobil (PC STYLY) --- */
 
 #score-summary-mobile {
-    display: none; 
+    display: none; /* Skryto na desktopu */
     background-color: #f8f8f8;
     border-bottom: 1px solid #ddd;
     padding: 5px 10px;
     text-align: center;
+    margin-bottom: 0; 
 }
 
 
@@ -98,37 +81,33 @@ button {
 
 @media (max-width: 600px) {
     
-    /* Zajištění nulových mezer */
+    /* Využití prostoru */
     body {
         padding: 0 !important;
         display: flex;
         flex-direction: column;
     }
     
-    /* 1. SKRYTÍ ZBYTEČNÝCH NADPISŮ PŘI AKTIVNÍ HŘE */
-    /* Tato třída musí být v JS aplikována na body nebo rodičovský kontejner */
-    body.game-active h2 {
-        display: none !important; 
+    /* Nastavení je vždy nahoře */
+    #setup-section {
+        margin-bottom: 0; /* Bez mezery */
+        order: 1; 
+        padding: 10px 5px;
     }
     
-    /* --- POŘADÍ PRVKŮ NA MOBILU --- */
-
-    /* Pořadí 1: Setup - Musí být nahoře */
-    #setup-section {
-        margin-bottom: 5px;
-        padding: 10px 5px;
-        order: 1; 
+    /* Všechny nadpisy (Skóre Hráčů, Nastavení Hry) se při hře na mobilu skryjí */
+    h2 {
+        display: none !important;
     }
 
-    /* Pořadí 2: Mobilní shrnutí skóre (Mini-tabulka) */
+    /* Pořadí 2: Mobilní shrnutí skóre */
     #score-summary-mobile {
         display: block !important; 
         order: 2; 
         margin-bottom: 0; 
-        background-color: #e0e0e0; /* Zvýraznění */
     }
 
-    /* Pořadí 3: Karta aktivního hráče (jediná viditelná) */
+    /* Pořadí 3: Seznam hráčů */
     #players-list {
         flex-direction: column; 
         gap: 0; 
@@ -137,21 +116,21 @@ button {
         order: 3;
     }
 
-    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty */
-    #players-list .player-card:not(.active) {
+    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty (pouze pokud je třída game-active) */
+    #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze (vždy viditelná) */
+    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze, nalepená na input */
     .player-card.active {
         display: block !important; 
-        order: -2; /* Ještě jednou zkusíme dát aktivní kartu nahoru */
+        order: -2; /* Drží kartu nahoře v rámci seznamu */
         width: 100%;
         margin: 0; 
-        padding: 5px 10px !important; 
+        padding: 5px 10px !important; /* Maximální zmenšení paddingu */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
-        border-bottom: 0; 
+        border-bottom: 0; /* Nalepení */
     }
     
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
@@ -164,9 +143,9 @@ button {
         order: 4; /* Pořadí 4: Zadávání skóre */
     }
 
-    /* TLAČÍTKA SKÓRE: Oprava zobrazení mřížky */
+    /* KLÍČOVÁ OPRAVA: Zobrazení tlačítek skóre */
     #score-buttons {
-        display: grid !important; 
+        display: grid !important; /* Vynutíme GRID pro viditelnost */
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
