@@ -13,9 +13,9 @@ const PLAYERS_STORAGE_KEY = 'darts_scorer_players';
 const HISTORY_STORAGE_KEY = 'darts_scorer_history';
 const SAVED_GAME_KEY = 'darts_scorer_saved_game'; 
 
-// Mapy pro TTS (ponechány pro konzistenci)
-const BASE_NUMBER_TEXT_MAP = { /* ... */ };
-const DIGIT_MAP = { /* ... */ };
+// Mapy pro TTS (Zkráceno pro prostor)
+const BASE_NUMBER_TEXT_MAP = { 0: "nula", 1: "jedna", 2: "dvě", 3: "tři", 4: "čtyři", 5: "pět", 6: "šest", 7: "sedm", 8: "osm", 9: "devět", 10: "deset", 11: "jedenáct", 12: "dvanáct", 13: "třináct", 14: "čtrnáct", 15: "patnáct", 16: "šestnáct", 17: "sedmnáct", 18: "osmnáct", 19: "devatenáct", 20: "dvacet", 25: "dvacet pět", 30: "třicet", 40: "čtyřicet", 50: "padesát", 60: "šedesát", 101: "sto jedna", 301: "tři sta jedna", 501: "pět set jedna" };
+const DIGIT_MAP = { '0': 'nula', '1': 'jedna', '2': 'dvě', '3': 'tři', '4': 'čtyři', '5': 'pět', '6': 'šest', '7': 'sedm', '8': 'osm', '9': 'devět', };
 
 function getCzechNumber(number) { return BASE_NUMBER_TEXT_MAP[number] || number.toString(); }
 function getCzechNumberByDigits(number) { 
@@ -71,26 +71,23 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// --- UKLÁDÁNÍ A NAČÍTÁNÍ (Zkráceno pro přehlednost) ---
-function savePlayers() { /* ... */ }
-function loadPlayers() { /* ... */ }
-function saveGameHistory(newEntry) { /* ... */ }
-function saveCurrentGame() { /* ... */ }
-function checkSavedGame() { /* ... */ }
+// --- UKLÁDÁNÍ A NAČÍTÁNÍ (Zkráceno) ---
+function savePlayers() { const playerNames = players.map(p => ({ name: p.name })); localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(playerNames)); }
+function loadPlayers() { const storedPlayers = localStorage.getItem(PLAYERS_STORAGE_KEY); if (storedPlayers) { players = JSON.parse(storedPlayers).map(p => ({ name: p.name, score: 0, throws: [], currentRoundThrows: [0, 0, 0], stats: { doubles: 0, triples: 0 } })); } }
+function saveGameHistory(newEntry) { const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]'); allHistory.push(newEntry); localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(allHistory)); }
+function saveCurrentGame() { const gameState = { players: players, gameValue: gameValue, currentPlayerIndex: currentPlayerIndex, currentThrowIndex: currentThrowIndex, currentMultiplier: currentMultiplier, gameStarted: gameStarted, date: new Date().toISOString() }; localStorage.setItem(SAVED_GAME_KEY, JSON.stringify(gameState)); }
+function checkSavedGame() { const savedGame = localStorage.getItem(SAVED_GAME_KEY); const loadBtn = document.getElementById('load-game-btn'); if (loadBtn) { loadBtn.style.display = (savedGame && !gameStarted) ? 'inline-block' : 'none'; } }
 function loadSavedGame(gameState) {
-    // Zjednodušeno: Ponecháváme jen kritickou logiku nastavení stavu
     if (!gameState || !Array.isArray(gameState.players) || gameState.players.length === 0) { return; }
     players = gameState.players; gameValue = gameState.gameValue;
     currentPlayerIndex = gameState.currentPlayerIndex; currentThrowIndex = gameState.currentThrowIndex;
     currentMultiplier = gameState.currentMultiplier; gameStarted = true; 
     renderPlayers(); updateInputDisplay(); 
-    const endGameBtn = document.getElementById('end-game-btn');
-    if (endGameBtn) endGameBtn.style.display = 'inline-block';
+    const endGameBtn = document.getElementById('end-game-btn'); if (endGameBtn) endGameBtn.style.display = 'inline-block';
     document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
-    const historyButton = document.querySelector('a[href="history.html"] button');
-    if (historyButton) historyButton.disabled = true;
-    localStorage.removeItem(SAVED_GAME_KEY); 
-    checkSavedGame();
+    const historyButton = document.querySelector('a[href="history.html"] button'); if (historyButton) historyButton.disabled = true;
+    document.getElementById('players-list').classList.add('game-active');
+    localStorage.removeItem(SAVED_GAME_KEY);  checkSavedGame();
 }
 
 
@@ -134,11 +131,9 @@ function startGame(value) {
     saveState();  renderPlayers(); updateInputDisplay();
     
     document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])').forEach(btn => btn.disabled = true);
-    const historyButton = document.querySelector('a[href="history.html"] button');
-    if (historyButton) historyButton.disabled = true;
+    const historyButton = document.querySelector('a[href="history.html"] button'); if (historyButton) historyButton.disabled = true;
     
-    const endGameBtn = document.getElementById('end-game-btn');
-    if (endGameBtn) endGameBtn.style.display = 'inline-block';
+    const endGameBtn = document.getElementById('end-game-btn'); if (endGameBtn) endGameBtn.style.display = 'inline-block';
     checkSavedGame(); 
 }
 
@@ -154,11 +149,9 @@ function promptEndGame() {
     document.getElementById('players-list').classList.remove('game-active');
 
     document.querySelectorAll('#setup-section button').forEach(btn => btn.disabled = false);
-    const historyButton = document.querySelector('a[href="history.html"] button');
-    if (historyButton) historyButton.disabled = false;
+    const historyButton = document.querySelector('a[href="history.html"] button'); if (historyButton) historyButton.disabled = false;
     
-    const endGameBtn = document.getElementById('end-game-btn');
-    if (endGameBtn) endGameBtn.style.display = 'none';
+    const endGameBtn = document.getElementById('end-game-btn'); if (endGameBtn) endGameBtn.style.display = 'none';
     
     renderPlayers(); updateInputDisplay(); checkSavedGame(); 
 }
@@ -173,6 +166,7 @@ function renderPlayers() {
     // Vykreslení mobilního shrnutí skóre (Mini-tabulka)
     const summaryDiv = document.getElementById('score-summary-mobile');
     let summaryContent = '';
+
     if (gameStarted && players.length > 1) {
         summaryDiv.style.display = 'block';
         const nonCurrentPlayers = players.filter((p, index) => index !== currentPlayerIndex);
@@ -188,12 +182,12 @@ function renderPlayers() {
     }
 
 
-    // FIX: ZAJIŠTĚNÍ ZOBRAZENÍ KLÁVESNICE PO STARTU
+    // Fix: ZAJIŠTĚNÍ ZOBRAZENÍ KLÁVESNICE PO STARTU
     const dartInput = document.getElementById('dart-input');
     if (dartInput) {
         if (gameStarted) {
             dartInput.classList.remove('dart-input-hidden');
-            dartInput.style.maxHeight = '500px';
+            dartInput.style.maxHeight = '500px'; 
             dartInput.style.opacity = '1';
         } else {
             dartInput.classList.add('dart-input-hidden');
@@ -201,14 +195,13 @@ function renderPlayers() {
             dartInput.style.opacity = '0';
         }
     }
-    
+
+
     const savedGame = localStorage.getItem(SAVED_GAME_KEY);
     if (!gameStarted && savedGame) {
         const loadBtn = document.createElement('button');
-        loadBtn.innerText = 'Načíst uloženou hru';
-        loadBtn.id = 'load-game-btn';
-        loadBtn.style.backgroundColor = '#9b59b6';
-        loadBtn.style.marginRight = '10px';
+        loadBtn.innerText = 'Načíst uloženou hru'; loadBtn.id = 'load-game-btn';
+        loadBtn.style.backgroundColor = '#9b59b6'; loadBtn.style.marginRight = '10px';
         loadBtn.onclick = () => loadSavedGame(JSON.parse(savedGame));
         list.appendChild(loadBtn);
     }
@@ -237,10 +230,7 @@ function renderPlayers() {
                 } else {
                     className = 'throw-pending';
                 }
-            } else {
-                throwVal = player.currentRoundThrows[i];
-                className = 'throw-recorded';
-            }
+            } else { throwVal = player.currentRoundThrows[i]; className = 'throw-recorded'; }
             return `<span class="${className}">${throwVal}</span>`;
         }).join(' | ');
 
@@ -253,9 +243,7 @@ function renderPlayers() {
         } else if (gameStarted && !isCurrent) {
             const lastRoundScore = player.throws.length > 0 ? player.throws[player.throws.length - 1].totalRoundScore : '-';
             infoText = `<p class="last-round-score">Poslední kolo: ${lastRoundScore}</p>`;
-        } else if (!gameStarted) {
-            infoText = '';
-        }
+        } else if (!gameStarted) { infoText = ''; }
         
         const removeBtn = gameStarted ? '' : 
             `<button onclick="removePlayer('${player.name}')" style="background-color: #c0392b; padding: 3px 8px; font-size: 0.8em; margin-top: 5px;">Odebrat</button>`;
@@ -271,7 +259,18 @@ function renderPlayers() {
     checkSavedGame();
 }
 
-function renderScoreButtons() { /* ... */ }
+function renderScoreButtons() {
+    const container = document.getElementById('score-buttons');
+    container.innerHTML = '';
+    const scoresToDisplay = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+    scoresToDisplay.forEach(score => {
+        const btn = document.createElement('button');
+        btn.innerText = score;
+        if (score === 0) { btn.classList.add('zero-button'); }
+        btn.onclick = () => recordThrow(score);
+        container.appendChild(btn);
+    });
+}
 function updateInputDisplay() { /* ... */ }
 function setMultiplier(multiplier) { /* ... */ }
 function recordThrow(score) { /* ... */ }
