@@ -16,13 +16,16 @@
             <button onclick="startGame(501)">Start 501</button>
             <button onclick="addPlayer()">Přidat Hráče</button>
             <button onclick="window.location.href='history.html'" style="background-color: #3498db;">Výsledková listina</button>
-            <div id="end-game-button-container"></div>
-            </div>
+            
+            <!-- STATICKÉ TLAČÍTKO S VYSOKOU PRIORITOU Z-INDEXU -->
+            <button id="end-game-btn" onclick="promptEndGame()" style="background-color: #9b59b6; display: none; position: relative; z-index: 9999;">Ukončit hru</button>
+        </div>
 
         <div id="score-summary-mobile"></div>
 
         <div id="players-list">
-            </div>
+            <!-- Karty hráčů se vkládají zde -->
+        </div>
 
         <div id="dart-input" class="dart-input-hidden">
             <h2 id="current-player-title">Zadání Hodu - Aktuální hráč: <span id="current-player-name"></span></h2>
@@ -34,7 +37,8 @@
             </div>
             
             <div id="score-buttons">
-                </div>
+                <!-- Tlačítka skóre se vykreslují JS -->
+            </div>
 
             <button onclick="undoLastThrow()">Vrácení zpět (Undo)</button>
         </div>
