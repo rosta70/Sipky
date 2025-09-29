@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENÝM SCOPE A VYMAZÁNÍM DAT)
+// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENOU VAZBOU 'UKONČIT HRU')
 
 // Globální stav hry
 let players = [];
@@ -61,17 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
     endGameContainer.appendChild(endGameBtn); 
     
-    // PŘÍMÁ VAZBA TLAČÍTKA UKONČIT HRU
-    endGameBtn.addEventListener('click', promptEndGame);
-    // Původní delegování přes document.body bylo odstraněno.
-
+    // KLÍČOVÁ OPRAVA: PŘÍMÉ NAVÁZÁNÍ UDÁLOSTI K TLAČÍTKU
+    endGameBtn.addEventListener('click', promptEndGame); 
+    
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
     const summaryDiv = document.createElement('div');
     summaryDiv.id = 'score-summary-mobile';
     setupParent.insertBefore(summaryDiv, setupSection.nextSibling);
 
-    // Tlačítko pro history.html (Zde je předpoklad, že element existuje)
+    // Tlačítko pro history.html (Vymazat Vše)
     if (historyControls) {
         const clearBtn = document.createElement('button');
         clearBtn.innerText = 'VYMAZAT VŠECHNA DATA (localStorage)';
@@ -88,7 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     checkSavedGame(); 
 });
 
-// Zde se nacházelo původní delegování na document.body, které bylo odstraněno.
+// Původní delegování přes document.body bylo odstraněno a nahrazeno přímou vazbou.
+
 
 // --- NOVÁ FUNKCE: VYMAZÁNÍ VŠECH DAT ---
 function clearAllData() {
@@ -340,7 +340,7 @@ function updateInputDisplay() {
         tripleBtn.classList.add('active-multiplier');
     }
     
-    // Skrytí redundantního textu (handled v CSS, ale pro jistotu JS)
+    // Skrytí redundantního textu (zajištěno v CSS)
     if (multiplierTextContainer) {
         multiplierTextContainer.style.display = 'none';
     }
