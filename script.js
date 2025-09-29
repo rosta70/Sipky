@@ -59,17 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru'; endGameBtn.id = 'end-game-btn'; 
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
+    
+    // EXTRÉMNÍ OPRAVA: Přímá vazba onclick pro maximální robustnost
+    endGameBtn.onclick = promptEndGame;
+    
     endGameContainer.appendChild(endGameBtn); 
     
-    // KLÍČOVÁ OPRAVA: PŘÍMÁ VAZBA NA TLAČÍTKO POMOCÍ setTimeout (pro maximalni robustnost)
-    setTimeout(() => {
-        const finalEndGameBtn = document.getElementById('end-game-btn');
-        if (finalEndGameBtn) {
-            finalEndGameBtn.addEventListener('click', promptEndGame);
-        }
-    }, 0);
-
-
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
     const summaryDiv = document.createElement('div');
