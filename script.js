@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENÝM UI)
+// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENÝM SCOPE A VYMAZÁNÍM DAT)
 
 // Globální stav hry
 let players = [];
@@ -26,7 +26,7 @@ window.recordThrow = recordThrow;
 window.undoLastThrow = undoLastThrow;
 window.exportHistoryToJSON = exportHistoryToJSON;
 window.promptEndGame = promptEndGame;
-
+window.clearAllData = clearAllData; // Globální
 
 function getCzechNumber(number) { return BASE_NUMBER_TEXT_MAP[number] || number.toString(); }
 function getCzechNumberByDigits(number) { 
@@ -53,15 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupSection = document.getElementById('setup-section');
     const endGameContainer = document.getElementById('end-game-button-container'); 
+    const historyControls = document.getElementById('history-controls');
     
     // Tlačítka
     const endGameBtn = document.createElement('button');
     endGameBtn.innerText = 'Ukončit hru'; endGameBtn.id = 'end-game-btn'; 
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
     endGameContainer.appendChild(endGameBtn); 
-    
-    // Zde bylo dříve tlačítko Exportovat JSON Historii, které se v HTML souboru již nachází!
-    // Odebíráme dynamické vkládání redundantního tlačítka.
+    
+    // PŘÍMÁ VAZBA TLAČÍTKA UKONČIT HRU
+    endGameBtn.addEventListener('click', promptEndGame);
+    // Původní delegování přes document.body bylo odstraněno.
+    
+    const exportBtn = document.createElement('button');
+    exportBtn.innerText = 'Exportovat JSON Historii';
+    exportBtn.onclick = exportHistoryToJSON;
+    setupSection.appendChild(exportBtn);
 
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
@@ -69,15 +76,38 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryDiv.id = 'score-summary-mobile';
     setupParent.insertBefore(summaryDiv, setupSection.nextSibling);
 
+    // Tlačítko pro history.html (Zde je předpoklad, že element existuje)
+    if (historyControls) {
+        const clearBtn = document.createElement('button');
+        clearBtn.innerText = 'VYMAZAT VŠECHNA DATA (localStorage)';
+        clearBtn.onclick = clearAllData;
+        clearBtn.style.backgroundColor = '#c0392b';
+        clearBtn.style.fontWeight = 'bold';
+        clearBtn.style.marginTop = '20px';
+        historyControls.appendChild(clearBtn);
+    }
+    
     renderScoreButtons();
     renderPlayers(); 
     updateInputDisplay(); 
     checkSavedGame(); 
 });
 
-document.body.addEventListener('click', (event) => {
-    if (event.target.id === 'end-game-btn') { promptEndGame(); }
-});
+// Zde se nacházelo původní delegování na document.body, které bylo odstraněno.
+
+// --- NOVÁ FUNKCE: VYMAZÁNÍ VŠECH DAT ---
+function clearAllData() {
+    const confirmation = confirm(
+        "VAROVÁNÍ: Opravdu chcete VYMAZAT VŠECHNA ULOŽENÁ DATA (historiu, hráče, rozehranou hru) z prohlížeče?\n\n" +
+        "Tato akce je nevratná a vynuluje celou aplikaci."
+    );
+
+    if (confirmation) {
+        localStorage.clear();
+        alert("Všechna data byla vymazána. Aplikace bude nyní znovu načtena.");
+        window.location.reload();
+    }
+}
 
 
 // --- UKLÁDÁNÍ A NAČÍTÁNÍ ---
@@ -381,7 +411,7 @@ function endRound() {
     let gameJustEnded = false; 
     const currentThrows = [...player.currentRoundThrows]; 
 
-    // --- TTS SEKVENČNÍ LOGIKA (Opraveno: Přečte poslední hod a přepne hráče) ---
+    // --- TTS SEKVENČNÍ LOGIKA ---
     
     const lastThrowText = getCzechNumberByDigits(currentThrows[2]);
     const lastThrowUtterance = speakText(lastThrowText);
@@ -524,4 +554,17 @@ function exportHistoryToJSON() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+function clearAllData() {
+    const confirmation = confirm(
+        "VAROVÁNÍ: Opravdu chcete VYMAZAT VŠECHNA ULOŽENÁ DATA (historiu, hráče, rozehranou hru) z prohlížeče?\n\n" +
+        "Tato akce je nevratná a vynuluje celou aplikaci."
+    );
+
+    if (confirmation) {
+        localStorage.clear();
+        alert("Všechna data byla vymazána. Aplikace bude nyní znovu načtena.");
+        window.location.reload();
+    }
 }
