@@ -267,13 +267,95 @@ function renderScoreButtons() {
         const btn = document.createElement('button');
         btn.innerText = score;
         if (score === 0) { btn.classList.add('zero-button'); }
-        btn.onclick = () => recordThrow(score);
+        // DŮLEŽITÉ: Použití anonymní funkce zajišťuje správné volání
+        btn.onclick = () => recordThrow(score); 
         container.appendChild(btn);
     });
 }
-function updateInputDisplay() { /* ... */ }
-function setMultiplier(multiplier) { /* ... */ }
-function recordThrow(score) { /* ... */ }
+
+function updateInputDisplay() {
+    const multiplierTextContainer = document.querySelector('#dart-input p');
+    const multiplierText = document.getElementById('current-multiplier');
+    const doubleBtn = document.querySelector('[onclick="setMultiplier(2)"]');
+    const tripleBtn = document.querySelector('[onclick="setMultiplier(3)"]');
+    
+    document.getElementById('current-player-name').innerText = players[currentPlayerIndex] ? players[currentPlayerIndex].name : 'Není vybrán';
+    
+    // Zajištění, že indikátor existuje
+    let throwIndicator = document.getElementById('throw-indicator');
+    if (!throwIndicator) {
+        throwIndicator = document.createElement('span');
+        throwIndicator.id = 'throw-indicator';
+        const dartInput = document.getElementById('dart-input');
+        if (dartInput) {
+            dartInput.insertBefore(throwIndicator, dartInput.querySelector('h2'));
+        }
+    }
+    throwIndicator.innerText = gameStarted ? `Šipka: ${currentThrowIndex + 1} / 3` : '';
+
+    doubleBtn.classList.remove('active-multiplier');
+    tripleBtn.classList.remove('active-multiplier');
+
+    if (currentMultiplier === 2) {
+         doubleBtn.classList.add('active-multiplier');
+         multiplierTextContainer.style.display = 'block';
+         multiplierText.innerText = '2x';
+    } else if (currentMultiplier === 3) {
+         tripleBtn.classList.add('active-multiplier');
+         multiplierTextContainer.style.display = 'block';
+         multiplierText.innerText = '3x';
+    } else {
+        multiplierTextContainer.style.display = 'none';
+        multiplierText.innerText = '1x'; 
+    }
+}
+
+
+function setMultiplier(multiplier) {
+    if (!gameStarted) return;
+    
+    if (currentThrowIndex < 3) {
+        currentMultiplier = multiplier;
+    }
+    updateInputDisplay();
+    renderPlayers(); 
+}
+
+function recordThrow(score) {
+    if (!gameStarted || currentThrowIndex >= 3) {
+        alert("Nejprve spusťte hru!");
+        return;
+    }
+    
+    const value = score * currentMultiplier; 
+    const player = players[currentPlayerIndex];
+    
+    player.currentRoundThrows[currentThrowIndex] = value; 
+    
+    // TTS: Hlasová odezva pro 1. a 2. hod
+    if (currentThrowIndex < 2) {
+        speakText(getCzechNumberByDigits(value)); 
+    }
+    
+    if (currentMultiplier === 2) {
+        player.stats.doubles++;
+    } else if (currentMultiplier === 3) {
+        player.stats.triples++;
+    }
+    
+    currentMultiplier = 1; 
+    currentThrowIndex++; 
+
+    renderPlayers(); 
+    updateInputDisplay(); 
+    saveState();
+
+    if (currentThrowIndex === 3) {
+        endRound();
+    }
+}
+
+
 function endRound() { /* ... */ }
 function saveState() { /* ... */ }
 function undoLastThrow() { /* ... */ }
