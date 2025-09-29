@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (KONEČNÁ OPRAVA: ŘEŠENÍ ZOBRAZENÍ TLAČÍTEK SKÓRE A POŘADÍ)
+// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE)
 
 // Globální stav hry
 let players = [];
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryDiv = document.createElement('div');
     summaryDiv.id = 'score-summary-mobile';
     summaryDiv.style.display = 'none';
-    setupParent.insertBefore(summaryDiv, setupSection.nextSibling); // Vložíme hned pod setup-section
+    setupParent.insertBefore(summaryDiv, setupSection.nextSibling);
 
     renderScoreButtons();
     renderPlayers(); 
@@ -179,8 +179,7 @@ function loadSavedGame(gameState) {
     
     speakText(`Hra načtena. Na řadě je ${players[currentPlayerIndex].name}`);
     
-    // Aplikace třídy na body i players-list
-    document.body.classList.add('game-active');
+    document.body.classList.add('game-active');
     document.getElementById('players-list').classList.add('game-active');
 
     localStorage.removeItem(SAVED_GAME_KEY); 
