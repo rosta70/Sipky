@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (NOVÉ MINI-SHRNUTÍ SKÓRE PRO MOBIL)
+// script.js - CELÝ SOUBOR (KONEČNÁ OPRAVA: ŘEŠENÍ ZOBRAZENÍ TLAČÍTEK SKÓRE A POŘADÍ)
 
 // Globální stav hry
 let players = [];
@@ -62,12 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.onclick = exportHistoryToJSON;
     setupSection.appendChild(exportBtn);
 
-    // 3. Nový kontejner pro mobilní shrnutí skóre (přidán do body/app-container)
-    const appContainer = document.getElementById('app-container') || document.body;
+    // 3. Nový kontejner pro mobilní shrnutí skóre (Vkládáme do DOM, kde je potřeba)
+    const setupParent = setupSection.parentNode;
     const summaryDiv = document.createElement('div');
     summaryDiv.id = 'score-summary-mobile';
-    summaryDiv.style.display = 'none'; // Skrytý defaultně
-    appContainer.prepend(summaryDiv); // Umístíme ho na začátek, aby byl nad hrací plochou
+    summaryDiv.style.display = 'none';
+    setupParent.insertBefore(summaryDiv, setupSection.nextSibling); // Vložíme hned pod setup-section
 
     renderScoreButtons();
     renderPlayers(); 
@@ -324,7 +324,7 @@ function renderPlayers() {
     const list = document.getElementById('players-list');
     list.innerHTML = '';
 
-    // Vykreslení mobilního shrnutí skóre (jen když je hra spuštěna)
+    // --- Vykreslení mobilního shrnutí skóre (Mini-tabulka) ---
     const summaryDiv = document.getElementById('score-summary-mobile');
     let summaryContent = '';
 
@@ -416,9 +416,12 @@ function renderPlayers() {
             infoText += `<p class="round-throws">Hody v kole: ${throws}</p>`;
             infoText += `<p>Potřeba: <strong class="round-needed">${required}</strong> (Součet: ${currentRoundSum})</p>`;
         } else if (gameStarted && !isCurrent) {
-            // Neaktivní hráči (na desktopu/tabletu ukázat poslední kolo)
+            // Neaktivní hráči - Vykreslí jen skóre kola pro desktop/tablet
             const lastRoundScore = player.throws.length > 0 ? player.throws[player.throws.length - 1].totalRoundScore : '-';
             infoText = `<p class="last-round-score">Poslední kolo: ${lastRoundScore}</p>`;
+        } else if (!gameStarted) {
+            // Před hrou neukazovat hody - jen jméno a tlačítko Odebrat
+            infoText = '';
         }
         
         const removeBtn = gameStarted ? '' : 
@@ -434,9 +437,6 @@ function renderPlayers() {
     });
     checkSavedGame();
 }
-
-// ... (zbytek kódu, který se nemění, např. updateInputDisplay, recordThrow, endRound atd.) ...
-// Zde bych vložil zbytek kódu, který zůstává stejný pro ucelenost
 
 function updateInputDisplay() {
     const multiplierTextContainer = document.querySelector('#dart-input p');
