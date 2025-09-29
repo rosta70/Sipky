@@ -3,50 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Počítadlo ŠIPKY (Darts Scorer)</title>
+    <title>ŠIPKY - Počítadlo skóre</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="app-container">
+        <h1>ŠIPKY - Počítadlo skóre</h1>
 
-    <h1>ŠIPKY - Počítadlo skóre</h1>
-    
-    <div id="end-game-button-container" style="text-align: center; margin-bottom: 10px;">
+        <div id="setup-section">
+            <button onclick="startGame(101)">Start 101</button>
+            <button onclick="startGame(301)">Start 301</button>
+            <button onclick="startGame(501)">Start 501</button>
+            <button onclick="addPlayer()">Přidat Hráče</button>
+            <button onclick="window.location.href='history.html'" style="background-color: #3498db;">Výsledková listina</button>
+            <div id="end-game-button-container"></div>
+            <button onclick="exportHistoryToJSON()">Exportovat JSON Historii</button>
         </div>
 
-    <div id="setup-section">
-        <h2>Nastavení Hry</h2>
-        <button onclick="startGame(101)">Start 101</button>
-        <button onclick="startGame(301)">Start 301</button>
-        <button onclick="startGame(501)">Start 501</button>
-        <button onclick="addPlayer()">Přidat Hráče</button>
-        
-        <a href="history.html" style="text-decoration: none;">
-            <button style="background-color: #3498db;">Výsledková listina</button>
-        </a>
-        </div>
+        <div id="score-summary-mobile"></div>
 
-    <div id="score-section">
-        <h2>Skóre Hráčů</h2>
         <div id="players-list">
             </div>
-    </div>
-    
-    <hr>
 
-    <div id="dart-input">
-        <h2>Zadání Hodu - Aktuální hráč: <span id="current-player-name"></span></h2>
-        <div id="multiplier-buttons">
-            <button class="multiplier" onclick="setMultiplier(2)">Double (x2)</button>
-            <button class="multiplier" onclick="setMultiplier(3)">Triple (x3)</button>
-            <p>Násobitel: <span id="current-multiplier">1</span>x</p>
-        </div>
-        
-        <div id="score-buttons">
+        <div id="dart-input" class="dart-input-hidden">
+            <h2 id="current-player-title">Zadání Hodu - Aktuální hráč: <span id="current-player-name"></span></h2>
+            
+            <div id="multiplier-buttons">
+                <button onclick="setMultiplier(2)" class="multiplier">Double (x2)</button>
+                <button onclick="setMultiplier(3)" class="multiplier">Triple (x3)</button>
+                <p>Násobitel: <span id="current-multiplier">1x</span></p>
             </div>
+            
+            <div id="score-buttons">
+                </div>
 
-        <button onclick="undoLastThrow()">Vrácení zpět (Undo)</button>
+            <button onclick="undoLastThrow()">Vrácení zpět (Undo)</button>
+        </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
