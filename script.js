@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
     endGameContainer.appendChild(endGameBtn); 
     
-    // NOVÉ DELEGOVÁNÍ: Připojíme event listener k celému kontejneru
+    // KLÍČOVÁ OPRAVA: Robustní delegování události na kontejner
     endGameContainer.addEventListener('click', (event) => {
         if (event.target.id === 'end-game-btn') {
             promptEndGame();
