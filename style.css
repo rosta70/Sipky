@@ -47,7 +47,7 @@ button {
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.2s;
-    background-color: #3498db; /* Středně modrá */
+    background-color: #3498db; /* Středně modrá (Pro UNDO, Výsledková listina) */
     color: white;
 }
 
@@ -57,7 +57,7 @@ button:hover {
 
 /* Tlačítka pro volbu hry (101, 301, 501) a Export */
 #setup-section button {
-    background-color: #27ae60; /* Zelená */
+    background-color: #27ae60; /* Zelená (Start, Přidat hráče, Export) */
     font-weight: bold;
 }
 
@@ -94,10 +94,10 @@ button:hover {
     gap: 10px;
 }
 
-#multiplier-buttons button { /* Přidána třída multiplier v HTML, zde to zajistíme */
+#multiplier-buttons button {
     background-color: #f39c12; /* Oranžová */
     font-weight: bold;
-    color: white; /* Zajištění bílého textu */
+    color: white; 
 }
 #multiplier-buttons button:hover {
     background-color: #e67e22;
@@ -128,7 +128,7 @@ button:hover {
 
 /* Speciální styl pro tlačítko NULA (MISS) */
 .zero-button {
-    background-color: #95a5a6 !important; /* Světlejší šedá */
+    background-color: #95a5a6 !important;
     color: white !important;
 }
 .zero-button:hover {
@@ -186,7 +186,43 @@ button:hover {
     color: #c0392b; 
 }
 
-/* ... (styly pro tabulky atd.) ... */
+/* --- NOVÝ BLOK: Mini-shnutí skóre pro mobil --- */
+
+#score-summary-mobile {
+    display: none; /* Defaultně skryto */
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    padding: 5px 10px;
+    text-align: center;
+}
+
+#score-summary-mobile h3 {
+    font-size: 0.9em;
+    margin: 0 0 5px 0;
+    color: #34495e;
+}
+
+.score-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, auto); /* Jméno | Skóre */
+    gap: 0 15px;
+    justify-content: center;
+    font-size: 0.9em;
+    padding-bottom: 5px;
+}
+
+.score-summary-grid .player-name {
+    text-align: right;
+    font-weight: normal;
+    color: #666;
+}
+
+.score-summary-grid .player-score {
+    text-align: left;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
 
 /* ================================================= */
 /* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
@@ -207,56 +243,51 @@ button:hover {
         flex-direction: column; 
         gap: 0; 
         margin-top: 0; 
-        margin-bottom: 0;
-        display: flex !important; /* Vynutí zobrazení kontejneru */
+        margin-bottom: 0; 
+        display: flex;
+    }
+    
+    /* Zobrazení shrnutí skóre pod setupem, jen na mobilu */
+    #score-summary-mobile {
+        display: block; 
     }
 
-    /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna */
+    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty (je nahrazena #score-summary-mobile) */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře a bez mezer (KLÍČOVÁ ZMĚNA) */
+    /* KARTA AKTIVNÍHO HRÁČE: Mininalistická verze */
     .player-card.active {
         display: block !important; 
         order: -2; 
         width: 100%;
         max-width: none;
         margin: 0; 
-        /* Tady je kouzlo: Zmenšíme vnitřní mezery, aby karta byla co nejmenší */
-        padding: 5px 10px !important; 
+        padding: 5px 10px !important; /* Maximální zmenšení paddingu */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
         border-bottom: 0; 
     }
-
-    /* ZMENŠENÍ MEZER UVNITŘ AKTIVNÍ KARTY (FINÁLNÍ ÚPRAVA) */
+    
+    /* FINÁLNÍ ZMENŠENÍ MEZER UVNITŘ KARTY AKTIVNÍHO HRÁČE */
     .player-card.active h3 {
         margin: 0; 
+        font-size: 1.1em;
     }
     .player-card.active p {
         margin: 0; /* Úplné odstranění mezery mezi řádky */
         line-height: 1.1;
     }
     .player-card.active .score-remaining strong {
-        font-size: 1.8em; /* Udržíme čitelnost */
+        font-size: 1.7em; /* Dostačující čitelnost */
     }
-    .player-card.active .round-throws {
+    .player-card.active .round-throws, 
+    .player-card.active .last-round-score {
         font-size: 0.9em;
     }
 
     
-    /* VŠECHNY KARTY: Pro mobil bez okrajů pro úsporu místa */
-    .player-card {
-        width: 100%;
-        max-width: none;
-        margin: 0; 
-        padding: 10px;
-        border-radius: 0;
-        box-shadow: none;
-        border-bottom: 1px solid #ddd; 
-    }
-
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
     #dart-input {
         margin-top: 0 !important;
