@@ -116,8 +116,6 @@ button:hover {
     gap: 10px; 
     max-width: 500px;
     margin: 10px auto;
-    /* Důležité: Vynucení viditelnosti na desktopu */
-    display: grid !important; 
 }
 
 #score-buttons button {
@@ -196,9 +194,8 @@ button:hover {
     border-bottom: 1px solid #ddd;
     padding: 5px 10px;
     text-align: center;
-    /* DŮLEŽITÉ: Zajištění správné pozice pod setup-section */
-    order: 2; 
-    margin-bottom: 10px; 
+    order: 2; /* Nastaveno pro mobil */
+    margin-bottom: 0; /* Bez mezery */
 }
 
 #score-summary-mobile h3 {
@@ -209,7 +206,7 @@ button:hover {
 
 .score-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adaptivní sloupce */
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
     gap: 0 15px;
     justify-content: center;
     font-size: 0.9em;
@@ -237,7 +234,6 @@ button:hover {
     
     body {
         padding: 0 !important;
-        /* Nastavíme body jako flex kontejner, abychom mohli manipulovat s pořadím prvků */
         display: flex;
         flex-direction: column;
     }
@@ -252,10 +248,10 @@ button:hover {
     #score-summary-mobile {
         display: block !important; 
         order: 2; 
-        margin-bottom: 5px; 
+        margin-bottom: 0; 
     }
 
-    /* Pořadí 3: Seznam hráčů (zobrazí se jen aktivní) */
+    /* Pořadí 3: Aktivní Hráč (jediný viditelný) */
     #players-list {
         flex-direction: column; 
         gap: 0; 
@@ -264,25 +260,15 @@ button:hover {
         order: 3;
     }
 
-    /* Pořadí 4: Zadávání skóre (tlačítka) */
-    #dart-input {
-        margin-top: 0 !important;
-        margin-bottom: 10px; 
-        padding: 10px;
-        border-radius: 0;
-        border-top: 0; 
-        order: 4;
-    }
-
     /* KLÍČOVÝ KROK: Skryje neaktivní karty POUZE, když je hra spuštěna */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Vždy nahoře a bez mezer (Minimalistická) */
+    /* KARTA AKTIVNÍHO HRÁČE: Mininalistická verze */
     .player-card.active {
         display: block !important; 
-        order: -2; /* Zajistí, že aktivní karta je vždy na vrchu seznamu */
+        order: -2; 
         width: 100%;
         max-width: none;
         margin: 0; 
@@ -292,25 +278,24 @@ button:hover {
         border-bottom: 0; 
     }
     
-    /* VŠECHNY KARTY: Pro mobil bez okrajů pro úsporu místa */
-    .player-card {
-        width: 100%;
-        max-width: none;
-        margin: 0; 
+    /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
+    #dart-input {
+        margin-top: 0 !important;
+        margin-bottom: 10px; 
         padding: 10px;
         border-radius: 0;
-        box-shadow: none;
-        border-bottom: 1px solid #ddd; 
+        border-top: 0; 
+        order: 4; /* Pořadí 4: Zadávání skóre */
     }
 
-    /* TLAČÍTKA SKÓRE: Optimalizace pro 6 sloupců */
+    /* OPRAVA: Zajištění zobrazení mřížky tlačítek skóre */
     #score-buttons {
+        display: grid !important; 
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
         padding: 0 5px; 
         margin: 5px auto 10px auto !important;
-        display: grid !important; /* Oprava: Zajištění zobrazení mřížky */
     }
     
     #score-buttons button {
