@@ -1,18 +1,22 @@
-/* style.css - CELÝ SOUBOR */
+/* style.css - CELÝ SOUBOR (NOVÁ STRUKTURA) */
 
-/* --- Základní Styly (Desktop/Default) --- */
+/* --- Základní Styly a Reset --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
     margin: 0;
-    padding: 20px;
+    padding: 0; 
 }
 
-h1, h2 {
-    color: #1a5273;
-    text-align: center;
+#app-container {
+    padding: 20px; 
+    max-width: 1200px;
+    margin: 0 auto;
 }
+
+h1 { text-align: center; color: #2c3e50; }
+h2 { text-align: center; color: #1a5273; margin: 10px 0; }
 
 /* Sekce nastavení a vstupu */
 #setup-section, #dart-input {
@@ -20,7 +24,7 @@ h1, h2 {
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
@@ -36,25 +40,26 @@ h1, h2 {
     transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
 }
 
-/* --- TLAČÍTKA: Vizuální styly --- */
-button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: #3498db; color: white; }
+/* --- TLAČÍTKA --- */
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+    background-color: #3498db; /* Výchozí */
+    color: white;
+}
 #setup-section button { background-color: #27ae60; }
 #multiplier-buttons button { background-color: #f39c12; }
 #score-buttons button { background-color: #34495e; }
 .zero-button { background-color: #95a5a6 !important; }
 .active-multiplier { background-color: #c0392b !important; }
 
-/* --- Sekce Zadávání (Dart Input) --- */
 
-#score-buttons {
-    display: grid !important; 
-    grid-template-columns: repeat(6, 1fr); 
-    gap: 10px; 
-    max-width: 500px;
-    margin: 10px auto;
-}
-
-/* --- Karty Hráčů --- */
+/* --- KARTY HRÁČŮ --- */
 #players-list {
     display: flex; 
     flex-wrap: wrap;
@@ -63,7 +68,6 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     margin-top: 20px;
     margin-bottom: 20px;
 }
-
 .player-card {
     background-color: #ecf0f1;
     padding: 10px; 
@@ -79,103 +83,76 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     order: -1; 
 }
 
+/* Kontejner tlačítek skóre */
+#score-buttons {
+    display: grid !important; 
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 10px; 
+    max-width: 500px;
+    margin: 10px auto;
+}
 
-/* --- NOVÝ BLOK: Mini-shnutí skóre pro mobil (PC STYLY) --- */
-
+/* --- MOBILNÍ MINI-SHRNUTÍ SKÓRE --- */
 #score-summary-mobile {
     display: none; 
-    background-color: #f8f8f8;
-    border-bottom: 1px solid #ddd;
+    background-color: #e0e0e0;
     padding: 5px 10px;
     text-align: center;
+    margin-bottom: 5px;
 }
+#score-summary-mobile h3 { font-size: 0.9em; margin: 0 0 5px 0; color: #34495e; }
+.score-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0 15px; justify-content: center; font-size: 0.9em; padding-bottom: 5px; }
 
 
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (KONEČNÁ OPRAVA) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ */
 /* ================================================= */
 
 @media (max-width: 600px) {
     
-    body {
-        padding: 0 !important;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* SKRYTÍ ZBYTEČNÝCH NADPISŮ PŘI AKTIVNÍ HŘE */
-    body.game-active h2 {
-        display: none !important; 
-    }
-    
-    /* Pořadí 1: Setup */
-    #setup-section {
-        margin-bottom: 0; 
-        padding: 10px 5px;
-        order: 1; 
-        /* Skrytí tlačítek nastavení po startu hry */
-        /* Předpokládáme, že JS skrývá celou sekci #setup-section */
-    }
+    body { padding: 0 !important; }
+    #app-container { padding: 5px; } 
 
-    /* Pořadí 2: Mobilní shrnutí skóre (Mini-tabulka) */
-    #score-summary-mobile {
-        display: block !important; 
-        order: 2; 
-        margin-bottom: 0; 
-        padding: 5px 10px;
-    }
-
-    /* Pořadí 3: Seznam hráčů (Aktivní karta) */
+    /* SKRYTÍ NADPISŮ PŘI HRANÍ */
+    #players-list.game-active h2 { display: none !important; }
+    
+    /* VŠICHNI HRÁČI NEBO JEN AKTIVNÍ */
     #players-list {
         flex-direction: column; 
         gap: 0; 
         margin-top: 0; 
         margin-bottom: 0;
-        order: 3;
     }
-
-    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty */
+    /* Skryje NEAKTIVNÍ karty */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze, max komprese */
+    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze */
     .player-card.active {
         display: block !important; 
-        order: -2; /* Drží kartu nahoře v rámci seznamu */
         width: 100%;
         margin: 0; 
-        padding: 5px 10px !important; /* Absolutní minimalizace vertikálního prostoru */
+        padding: 5px 10px !important; /* Maximální minimalizace */
         border-radius: 0;
-        border-top: 3px solid #2ecc71; 
         border-bottom: 0; 
     }
     
-    .player-card.active h3, 
-    .player-card.active p {
-        margin: 0 !important; 
-        padding: 0;
-        line-height: 1.2; /* Snížení řádkování */
-    }
-
-    /* Pořadí 4: Zadávání skóre */
+    /* ZAJIŠTĚNÍ NULOVÝCH MEZER OKOLO INPUTU */
     #dart-input {
-        margin-top: 0 !important; 
-        margin-bottom: 0; /* Bez spodní mezery */
+        margin-top: 0 !important;
+        margin-bottom: 5px; 
         padding: 10px;
         border-radius: 0;
-        border-top: 0; 
-        order: 4; 
     }
 
-    /* TLAČÍTKA SKÓRE: Oprava zobrazení mřížky */
+    /* TLAČÍTKA SKÓRE: Optimalizace pro mobil */
     #score-buttons {
-        display: grid !important; 
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
         padding: 0 5px; 
-        margin: 5px auto 10px auto !important;
+        margin: 5px auto 5px auto !important;
     }
     
     #score-buttons button {
