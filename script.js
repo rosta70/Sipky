@@ -55,22 +55,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const endGameContainer = document.getElementById('end-game-button-container'); 
     const historyControls = document.getElementById('history-controls');
     
-    // PŘESUNUTO: TLAČÍTKO END GAME JE JIŽ VYTVOŘENO V GLOBÁLNÍM SCOPE V HTML
+    // Tlačítka
+    const endGameBtn = document.createElement('button');
+    endGameBtn.innerText = 'Ukončit hru'; endGameBtn.id = 'end-game-btn'; 
+    endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
+    endGameContainer.appendChild(endGameBtn); 
+    
+    // KLÍČOVÁ OPRAVA: PŘÍMÁ VAZBA NA TLAČÍTKO POMOCÍ setTimeout (pro maximalni robustnost)
+    setTimeout(() => {
+        const finalEndGameBtn = document.getElementById('end-game-btn');
+        if (finalEndGameBtn) {
+            finalEndGameBtn.addEventListener('click', promptEndGame);
+        }
+    }, 0);
 
-    // Nalezneme existující tlačítko a připojíme robustní delegování
-    if (endGameContainer) {
-        const endGameBtn = document.createElement('button');
-        endGameBtn.innerText = 'Ukončit hru'; endGameBtn.id = 'end-game-btn'; 
-        endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
-        endGameContainer.appendChild(endGameBtn); 
-        
-        // KLÍČOVÁ OPRAVA: Robustní delegování události na kontejner
-        endGameContainer.addEventListener('click', (event) => {
-            if (event.target.id === 'end-game-btn') {
-                promptEndGame();
-            }
-        });
-    }
 
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
