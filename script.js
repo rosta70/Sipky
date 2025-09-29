@@ -1,4 +1,4 @@
-// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENÝM SCOPE)
+// script.js - CELÝ SOUBOR (FINÁLNÍ STABILNÍ VERZE S OPRAVENÝM UI)
 
 // Globální stav hry
 let players = [];
@@ -60,10 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
     endGameBtn.style.backgroundColor = '#9b59b6'; endGameBtn.style.display = 'none'; 
     endGameContainer.appendChild(endGameBtn); 
     
-    const exportBtn = document.createElement('button');
-    exportBtn.innerText = 'Exportovat JSON Historii';
-    exportBtn.onclick = exportHistoryToJSON;
-    setupSection.appendChild(exportBtn);
+    // Zde bylo dříve tlačítko Exportovat JSON Historii, které se v HTML souboru již nachází!
+    // Odebíráme dynamické vkládání redundantního tlačítka.
 
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
@@ -383,10 +381,8 @@ function endRound() {
     let gameJustEnded = false; 
     const currentThrows = [...player.currentRoundThrows]; 
 
-    // --- TTS SEKVENČNÍ LOGIKA (Problém s posledním hodem) ---
+    // --- TTS SEKVENČNÍ LOGIKA (Opraveno: Přečte poslední hod a přepne hráče) ---
     
-    // Zde by se řešilo hlášení skóre a přepnutí hráče. Pro stabilitu je to asynchronní.
-    // Simulace asynchronní operace s onend pro dokončení kola.
     const lastThrowText = getCzechNumberByDigits(currentThrows[2]);
     const lastThrowUtterance = speakText(lastThrowText);
 
@@ -436,7 +432,15 @@ function endRound() {
             totalRoundScore: totalScore, bust: (newScore < 0 || newScore === 1)
         });
         
-        if (gameJustEnded) { /* ... */ }
+        if (gameJustEnded) { 
+            const gameResult = {
+                gameType: gameValue, date: new Date().toISOString().slice(0, 10), winner: winner ? player.name : 'N/A',
+                players: players.map(p => ({
+                    name: p.name, finalScore: p.score, allThrows: p.throws, stats: p.stats
+                }))
+            };
+            saveGameHistory(gameResult); localStorage.removeItem(SAVED_GAME_KEY);
+        }
         player.currentRoundThrows = [0, 0, 0];
         currentThrowIndex = 0;
         
@@ -452,6 +456,72 @@ function endRound() {
 }
 
 
-function saveState() { /* ... */ }
-function undoLastThrow() { /* ... */ }
-function exportHistoryToJSON() { /* ... */ }
+function saveState() {
+    const state = {
+        players: JSON.parse(JSON.stringify(players)), currentPlayerIndex: currentPlayerIndex, currentThrowIndex: currentThrowIndex, currentMultiplier: currentMultiplier, gameStarted: gameStarted 
+    };
+    history.push(state);
+    if (history.length > 50) {  history.shift(); }
+    if (gameStarted) saveCurrentGame();
+}
+
+function undoLastThrow() {
+    if (history.length <= 1) { alert("Nelze vrátit zpět, toto je první stav hry!"); return; }
+    
+    const lastState = history[history.length - 1]; 
+    const previousPlayer = players[lastState.currentPlayerIndex];
+    
+    const lastThrowValue = lastState.players[lastState.currentPlayerIndex].currentRoundThrows[lastState.currentThrowIndex - 1];
+    if (lastThrowValue) {
+        if (lastThrowValue % 3 === 0 && lastThrowValue / 3 <= 20 && previousPlayer.stats.triples > 0) { previousPlayer.stats.triples--; } 
+        else if (lastThrowValue % 2 === 0 && lastThrowValue / 2 <= 20 && previousPlayer.stats.doubles > 0) { previousPlayer.stats.doubles--; }
+    }
+    
+    history.pop(); 
+    const prevState = history[history.length - 1]; 
+
+    players = JSON.parse(JSON.stringify(prevState.players));
+    currentPlayerIndex = prevState.currentPlayerIndex;
+    currentThrowIndex = prevState.currentThrowIndex;
+    currentMultiplier = prevState.currentMultiplier;
+    gameStarted = prevState.gameStarted;
+
+    renderPlayers(); updateInputDisplay();
+    
+    const endGameBtn = document.getElementById('end-game-btn');
+    const setupButtons = document.querySelectorAll('#setup-section button:not([onclick="exportHistoryToJSON()"])');
+    const historyButton = document.querySelector('a[href="history.html"] button');
+
+    if (gameStarted) {
+        setupButtons.forEach(btn => btn.disabled = true);
+        if (historyButton) historyButton.disabled = true;
+        if (endGameBtn) endGameBtn.style.display = 'inline-block';
+        speakText(`Vráceno. Na řadě je ${players[currentPlayerIndex].name}`);
+        document.getElementById('players-list').classList.add('game-active');
+    } else {
+        setupButtons.forEach(btn => btn.disabled = false);
+        if (historyButton) historyButton.disabled = false;
+        if (endGameBtn) endGameBtn.style.display = 'none';
+        document.getElementById('players-list').classList.remove('game-active');
+    }
+    
+    checkSavedGame();
+}
+
+function exportHistoryToJSON() {
+    if (players.every(p => p.throws.length === 0)) { alert("Žádné hody k exportování. Zahrajte alespoň jedno kolo."); return; }
+    
+    const data = JSON.stringify(players.map(p => ({
+        name: p.name, gameType: gameValue, finalScore: p.score, history: p.throws
+    })), null, 2);
+
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sipky_historie_aktualni_hry_${new Date().toISOString().slice(0, 10)}.json`; 
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
