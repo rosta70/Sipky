@@ -64,11 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // PŘÍMÁ VAZBA TLAČÍTKA UKONČIT HRU
     endGameBtn.addEventListener('click', promptEndGame);
     // Původní delegování přes document.body bylo odstraněno.
-    
-    const exportBtn = document.createElement('button');
-    exportBtn.innerText = 'Exportovat JSON Historii';
-    exportBtn.onclick = exportHistoryToJSON;
-    setupSection.appendChild(exportBtn);
 
     // Mini-tabulka pro ostatní hráče
     const setupParent = setupSection.parentNode;
