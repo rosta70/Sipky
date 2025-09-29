@@ -1,6 +1,6 @@
-/* style.css - CELÝ SOUBOR (RADIKÁLNĚ ZJEDNODUŠENÝ PŘÍSTUP) */
+/* style.css - CELÝ SOUBOR */
 
-/* --- Základní Styly (Desktop) --- */
+/* --- Základní Styly (Desktop/Default) --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -14,7 +14,15 @@ h1, h2 {
     text-align: center;
 }
 
-/* ... (styly pro setup-section, dart-input, tlačítka atd. - ponechány) ... */
+/* Sekce nastavení a vstupu */
+#setup-section, #dart-input {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    text-align: center;
+}
 
 /* Třída pro skrytí vstupní sekce */
 .dart-input-hidden {
@@ -36,10 +44,29 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 .zero-button { background-color: #95a5a6 !important; }
 .active-multiplier { background-color: #c0392b !important; }
 
+/* --- Sekce Zadávání (Dart Input) --- */
+
+#dart-input {
+    /* Zajištění, že se nic neschovává za overflow */
+    overflow: visible;
+}
+
+/* Kontejner a styl pro číselná tlačítka (OPRAVA) */
+#score-buttons {
+    display: grid; 
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 10px; 
+    max-width: 500px;
+    margin: 10px auto;
+    /* Důležité: Zajištění, že se mřížka vždy zobrazí */
+    display: grid !important; 
+}
+
+
 /* --- Karty Hráčů --- */
 
 #players-list {
-    display: flex; /* Pro desktop */
+    display: flex; 
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
@@ -54,60 +81,64 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     width: 250px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     line-height: 1.3;
-    display: block; /* Zajišťuje viditelnost na desktopu/před hrou */
+    display: block; 
 }
 .player-card.active {
     border: 3px solid #2ecc71;
     background-color: #d7f5e3;
     order: -1; 
 }
-.player-card strong { font-size: 1.5em; color: #c0392b; }
 
 /* --- NOVÝ BLOK: Mini-shnutí skóre pro mobil (PC STYLY) --- */
 
 #score-summary-mobile {
-    display: none; /* Skryto na desktopu */
+    display: none; 
     background-color: #f8f8f8;
     border-bottom: 1px solid #ddd;
     padding: 5px 10px;
     text-align: center;
-    margin-bottom: 0; 
 }
 
-
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (FINÁLNÍ OPRAVA) */
 /* ================================================= */
 
 @media (max-width: 600px) {
     
-    /* Využití prostoru */
     body {
         padding: 0 !important;
         display: flex;
         flex-direction: column;
     }
     
-    /* Nastavení je vždy nahoře */
+    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER A SPRÁVNÉHO POŘADÍ */
+    
+    /* Pořadí 1: Setup */
     #setup-section {
-        margin-bottom: 0; /* Bez mezery */
-        order: 1; 
+        margin-bottom: 0;
         padding: 10px 5px;
+        order: 1; 
     }
     
-    /* Všechny nadpisy (Skóre Hráčů, Nastavení Hry) se při hře na mobilu skryjí */
-    h2 {
-        display: none !important;
+    /* Nadpisy (Skóre Hráčů, Nastavení Hry) se při hře na mobilu skryjí (z logiky v JS) */
+    body.game-active h2 {
+        display: none !important; 
     }
 
-    /* Pořadí 2: Mobilní shrnutí skóre */
+    /* Pořadí 2: Mobilní shrnutí skóre (Mini-tabulka) */
     #score-summary-mobile {
         display: block !important; 
         order: 2; 
         margin-bottom: 0; 
+        padding: 5px 10px;
+        /* Zmenšení vnitřního prostoru minitabulky */
+        line-height: 1.1; 
+    }
+    #score-summary-mobile h3 {
+        margin-bottom: 2px;
     }
 
-    /* Pořadí 3: Seznam hráčů */
+    /* Pořadí 3: Karta aktivního hráče (jediná viditelná) */
     #players-list {
         flex-direction: column; 
         gap: 0; 
@@ -116,23 +147,34 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
         order: 3;
     }
 
-    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty (pouze pokud je třída game-active) */
+    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze, nalepená na input */
+    /* KARTA AKTIVNÍHO HRÁČE: Mininalistická verze - ZDE JE AGRESIVNÍ ZMENŠENÍ */
     .player-card.active {
         display: block !important; 
-        order: -2; /* Drží kartu nahoře v rámci seznamu */
+        order: -2; 
         width: 100%;
         margin: 0; 
-        padding: 5px 10px !important; /* Maximální zmenšení paddingu */
+        padding: 5px 10px !important; /* Absolutní minimum paddingu */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
-        border-bottom: 0; /* Nalepení */
+        border-bottom: 0; 
     }
     
+    /* VŠECHNY PRVKY UVNITŘ AKTIVNÍ KARTY: Nulové mezery pro kompresi */
+    .player-card.active h3, 
+    .player-card.active p {
+        margin: 0 !important; 
+        padding: 0;
+        line-height: 1.2;
+    }
+    .player-card.active .score-remaining strong {
+        font-size: 1.7em; 
+    }
+
     /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
     #dart-input {
         margin-top: 0 !important;
@@ -145,7 +187,7 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 
     /* KLÍČOVÁ OPRAVA: Zobrazení tlačítek skóre */
     #score-buttons {
-        display: grid !important; /* Vynutíme GRID pro viditelnost */
+        display: grid !important; 
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
