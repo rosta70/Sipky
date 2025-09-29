@@ -42,13 +42,32 @@ h1, h2 {
     transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out; 
 }
 
-/* --- TLAČÍTKA --- */
-button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: #3498db; color: white; }
-#setup-section button { background-color: #27ae60; }
-#multiplier-buttons button { background-color: #f39c12; }
-#score-buttons button { background-color: #34495e; }
+/* --- TLAČÍTKA: Vizuální styly --- */
+button { 
+    padding: 10px 15px; 
+    margin: 5px; 
+    border-radius: 5px; 
+    background-color: #3498db; 
+    color: white; 
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+#setup-section button { background-color: #27ae60; } /* Zelené (Start) */
+#multiplier-buttons button { background-color: #f39c12; } /* Oranžové (Double/Triple) */
+#score-buttons button { background-color: #34495e; } /* Tmavě šedé (Čísla) */
+
 .zero-button { background-color: #95a5a6 !important; }
-.active-multiplier { background-color: #c0392b !important; }
+.active-multiplier { background-color: #c0392b !important; } /* Aktivní násobitel (Červený) */
+
+/* --- Sekce Zadávání (Dart Input) --- */
+
+/* Odstranění redundantního textu Násobitel: Xx */
+#dart-input p {
+    display: none; 
+}
 
 /* Kontejner tlačítek skóre */
 #score-buttons {
@@ -68,6 +87,7 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
 .player-card {
     background-color: #ecf0f1;
     padding: 10px; 
@@ -81,7 +101,7 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     background-color: #d7f5e3;
     order: -1; 
 }
-
+.player-card strong { font-size: 1.5em; color: #c0392b; }
 
 /* --- MOBILNÍ MINI-SHRNUTÍ SKÓRE --- */
 #score-summary-mobile {
@@ -96,75 +116,81 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 
 
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (AGRESIVNÍ KOMPRESE) */
 /* ================================================= */
 
 @media (max-width: 600px) {
     
     body {
         padding: 0 !important;
+        display: flex;
+        flex-direction: column;
     }
     
     #app-container {
-        padding: 0 5px 5px 5px; /* Minimalizace horizontálního paddingu */
+        padding: 0 5px 5px 5px; 
         margin: 0;
     }
 
     /* SKRYTÍ NADPISŮ PŘI HRANÍ */
     #players-list.game-active h2 { display: none !important; }
-    h1 { margin-top: 10px; margin-bottom: 10px; }
     
     /* ZAJIŠTĚNÍ POŘADÍ A MINIMÁLNÍCH MEZER */
+    
+    /* Pořadí 1: Setup */
     #setup-section {
         margin-bottom: 0; 
         padding: 10px 5px;
     }
     
+    /* Pořadí 2: Mobilní shrnutí skóre */
     #score-summary-mobile {
         display: block !important; 
         margin-bottom: 0; 
-        border-radius: 0;
         padding: 5px;
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Drastické zmenšení */
+    /* Pořadí 3: Seznam hráčů (Aktivní karta) */
     #players-list {
         flex-direction: column; 
         gap: 0; 
         margin: 0;
     }
 
+    /* Skryje NEAKTIVNÍ karty */
     #players-list.game-active .player-card:not(.active) {
         display: none !important; 
     }
 
+    /* KARTA AKTIVNÍHO HRÁČE: Drastické zmenšení */
     .player-card.active {
-        padding: 5px 10px !important; 
+        display: block !important; 
+        width: 100%;
         margin: 0; 
+        padding: 5px 10px !important; /* Absolutní minimalizace vertikálního prostoru */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
         border-bottom: 0; 
-        width: 100%;
-        box-shadow: none;
+        box-shadow: none; /* Odstranění stínu */
     }
     
-    /* ZMENŠENÍ TEXTU UVNITŘ AKTIVNÍ KARTY NA ABSOLUTNÍ MINIMUM */
+    /* KOMPRESE TEXTU UVNITŘ AKTIVNÍ KARTY */
     .player-card.active h3, 
     .player-card.active p {
         margin: 0 !important; 
         padding: 0;
-        line-height: 1.1; /* Komprese textu */
+        line-height: 1.1; 
         font-size: 1em;
     }
     .player-card.active .score-remaining strong {
-        font-size: 1.6em; /* Viditelné skóre */
+        font-size: 1.6em; 
     }
 
     /* ZAJIŠTĚNÍ VIDITELNOSTI TLAČÍTEK SKÓRE A MINIMÁLNÍCH MEZER */
     #dart-input {
-        margin-top: 0 !important; /* Přilepení */
-        margin-bottom: 0; 
-        padding: 10px 5px; /* Snížení paddingu */
+        margin-top: 0 !important;
+        margin-bottom: 0; /* Bez mezery */
+        padding: 10px 5px; 
         border-radius: 0;
         border-top: 0; 
     }
@@ -174,7 +200,7 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
         grid-template-columns: repeat(6, 1fr) !important;
         gap: 5px !important; 
         max-width: 100% !important; 
-        padding: 0; /* Odstranění paddingu uvnitř inputu */
+        padding: 0; 
         margin: 5px auto 5px auto !important;
     }
     
