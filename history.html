@@ -22,12 +22,16 @@
         </label>
         <input type="file" id="import-file" accept=".json" style="display: none;">
 
-        <button id="clear-history-btn" style="background-color: #c0392b; float: right;">Smazat historii</button>
+        <button id="clear-history-btn" style="background-color: #c0392b;">Smazat historii (jen hry)</button>
         
         <div id="resume-game-container" style="margin-top: 10px; display: none;">
             <button id="resume-game-btn" style="background-color: #9b59b6;">Dohrát importovanou hru</button>
         </div>
-    </div>
+
+        <button id="clear-all-data-btn" style="background-color: #c0392b; font-weight: bold; margin-top: 15px;">
+            VYMAZAT VŠECHNA DATA (Hráči, Historie, Ulož. Hra)
+        </button>
+        </div>
 
     <div id="player-overview-container">
         <h2>Přehled Hráčů a Statistiky</h2>
@@ -45,18 +49,37 @@
             document.getElementById('import-file').addEventListener('change', importHistory);
             document.getElementById('export-history-btn').addEventListener('click', exportHistory);
             document.getElementById('clear-history-btn').addEventListener('click', clearHistory);
-            document.getElementById('resume-game-btn').addEventListener('click', resumeGame); // Nová vazba
+            document.getElementById('resume-game-btn').addEventListener('click', resumeGame); 
+            
+            // NOVÁ VAZBA NA TLAČÍTKO MAZÁNÍ VŠECH DAT
+            document.getElementById('clear-all-data-btn').addEventListener('click', clearAllData);
         });
 
         const HISTORY_STORAGE_KEY = 'darts_scorer_history';
         const SAVED_GAME_KEY = 'darts_scorer_saved_game';
+        
+        // --- NOVÁ FUNKCE: VYMAZÁNÍ VŠECH DAT ---
+        function clearAllData() {
+            const confirmation = confirm(
+                "VAROVÁNÍ: Opravdu chcete VYMAZAT VŠECHNA ULOŽENÁ DATA (historiu, hráče, rozehranou hru) z prohlížeče?\n\n" +
+                "Tato akce je nevratná a vynuluje celou aplikaci."
+            );
+
+            if (confirmation) {
+                localStorage.clear();
+                alert("Všechna data byla vymazána. Aplikace bude nyní znovu načtena.");
+                window.location.reload();
+            }
+        }
+        // --- Konec NOVÉ FUNKCE ---
+
 
         // --- HLAVNÍ FUNKCE PRO NAČTENÍ A VYKRESLENÍ ---
         function loadHistory() {
             const allHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
             const container = document.getElementById('history-container');
             const overviewTable = document.getElementById('player-stats-table');
-            const resumeContainer = document.getElementById('resume-game-container'); // Nový prvek
+            const resumeContainer = document.getElementById('resume-game-container'); 
             const noMsg = document.getElementById('no-history-msg');
             container.innerHTML = '';
             overviewTable.innerHTML = '';
