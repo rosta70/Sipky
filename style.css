@@ -1,12 +1,12 @@
 /* style.css - CELÝ SOUBOR */
 
-/* --- Základní Styly a Reset (Desktop/Default) --- */
+/* --- Základní Styly (Desktop/Default) --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
     margin: 0;
-    padding: 20px; 
+    padding: 20px;
 }
 
 h1, h2 {
@@ -47,13 +47,11 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 /* --- Sekce Zadávání (Dart Input) --- */
 
 #score-buttons {
-    display: grid; 
+    display: grid !important; 
     grid-template-columns: repeat(6, 1fr); 
     gap: 10px; 
     max-width: 500px;
     margin: 10px auto;
-    /* Opraveno: Vynutíme GRID pro viditelnost na všech zařízeních */
-    display: grid !important; 
 }
 
 /* --- Karty Hráčů --- */
@@ -81,6 +79,7 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     order: -1; 
 }
 
+
 /* --- NOVÝ BLOK: Mini-shnutí skóre pro mobil (PC STYLY) --- */
 
 #score-summary-mobile {
@@ -93,33 +92,31 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 
 
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (KONEČNÁ OPRAVA) */
 /* ================================================= */
 
 @media (max-width: 600px) {
     
     body {
         padding: 0 !important;
-        /* Nastavíme body jako hlavní kontejner s vertikálním tokem */
         display: flex;
         flex-direction: column;
     }
     
     /* SKRYTÍ ZBYTEČNÝCH NADPISŮ PŘI AKTIVNÍ HŘE */
-    /* Tato třída je aplikována v JS na BODY */
     body.game-active h2 {
         display: none !important; 
     }
     
-    /* --- POŘADÍ PRVKŮ NA MOBILU --- */
-
-    /* Pořadí 1: Setup - Musí být úplně nahoře */
+    /* Pořadí 1: Setup */
     #setup-section {
-        margin-bottom: 0; /* Odstraní mezeru, aby se přilepila k dalším prvkům */
+        margin-bottom: 0; 
         padding: 10px 5px;
         order: 1; 
+        /* Skrytí tlačítek nastavení po startu hry */
+        /* Předpokládáme, že JS skrývá celou sekci #setup-section */
     }
-    
+
     /* Pořadí 2: Mobilní shrnutí skóre (Mini-tabulka) */
     #score-summary-mobile {
         display: block !important; 
@@ -137,24 +134,33 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
         order: 3;
     }
 
-    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze */
+    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty */
+    #players-list.game-active .player-card:not(.active) {
+        display: none !important; 
+    }
+
+    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze, max komprese */
     .player-card.active {
-        /* Agresivní minimalizace vertikálního prostoru */
-        padding: 5px 10px !important; 
+        display: block !important; 
+        order: -2; /* Drží kartu nahoře v rámci seznamu */
+        width: 100%;
         margin: 0; 
+        padding: 5px 10px !important; /* Absolutní minimalizace vertikálního prostoru */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
         border-bottom: 0; 
     }
     
-    /* Skryje NEAKTIVNÍ karty */
-    #players-list.game-active .player-card:not(.active) {
-        display: none !important; 
+    .player-card.active h3, 
+    .player-card.active p {
+        margin: 0 !important; 
+        padding: 0;
+        line-height: 1.2; /* Snížení řádkování */
     }
 
     /* Pořadí 4: Zadávání skóre */
     #dart-input {
-        margin-top: 0 !important; /* Přilepení k aktivní kartě */
+        margin-top: 0 !important; 
         margin-bottom: 0; /* Bez spodní mezery */
         padding: 10px;
         border-radius: 0;
