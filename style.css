@@ -1,12 +1,12 @@
 /* style.css - CELÝ SOUBOR */
 
-/* --- Základní Styly (Desktop/Default) --- */
+/* --- Základní Styly a Reset (Desktop/Default) --- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
     margin: 0;
-    padding: 20px;
+    padding: 20px; 
 }
 
 h1, h2 {
@@ -46,25 +46,17 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
 
 /* --- Sekce Zadávání (Dart Input) --- */
 
-#dart-input {
-    /* Zajištění, že se nic neschovává za overflow */
-    overflow: visible;
-}
-
-/* Kontejner a styl pro číselná tlačítka (OPRAVA) */
 #score-buttons {
     display: grid; 
     grid-template-columns: repeat(6, 1fr); 
     gap: 10px; 
     max-width: 500px;
     margin: 10px auto;
-    /* Důležité: Zajištění, že se mřížka vždy zobrazí */
+    /* Opraveno: Vynutíme GRID pro viditelnost na všech zařízeních */
     display: grid !important; 
 }
 
-
 /* --- Karty Hráčů --- */
-
 #players-list {
     display: flex; 
     flex-wrap: wrap;
@@ -99,46 +91,44 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
     text-align: center;
 }
 
+
 /* ================================================= */
-/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (FINÁLNÍ OPRAVA) */
+/* MEDIA QUERIES PRO MOBILNÍ ZOBRAZENÍ (CÍLENÁ OPRAVA) */
 /* ================================================= */
 
 @media (max-width: 600px) {
     
     body {
         padding: 0 !important;
+        /* Nastavíme body jako hlavní kontejner s vertikálním tokem */
         display: flex;
         flex-direction: column;
     }
     
-    /* ZAJIŠTĚNÍ MINIMÁLNÍCH MEZER A SPRÁVNÉHO POŘADÍ */
+    /* SKRYTÍ ZBYTEČNÝCH NADPISŮ PŘI AKTIVNÍ HŘE */
+    /* Tato třída je aplikována v JS na BODY */
+    body.game-active h2 {
+        display: none !important; 
+    }
     
-    /* Pořadí 1: Setup */
+    /* --- POŘADÍ PRVKŮ NA MOBILU --- */
+
+    /* Pořadí 1: Setup - Musí být úplně nahoře */
     #setup-section {
-        margin-bottom: 0;
+        margin-bottom: 0; /* Odstraní mezeru, aby se přilepila k dalším prvkům */
         padding: 10px 5px;
         order: 1; 
     }
     
-    /* Nadpisy (Skóre Hráčů, Nastavení Hry) se při hře na mobilu skryjí (z logiky v JS) */
-    body.game-active h2 {
-        display: none !important; 
-    }
-
     /* Pořadí 2: Mobilní shrnutí skóre (Mini-tabulka) */
     #score-summary-mobile {
         display: block !important; 
         order: 2; 
         margin-bottom: 0; 
         padding: 5px 10px;
-        /* Zmenšení vnitřního prostoru minitabulky */
-        line-height: 1.1; 
-    }
-    #score-summary-mobile h3 {
-        margin-bottom: 2px;
     }
 
-    /* Pořadí 3: Karta aktivního hráče (jediná viditelná) */
+    /* Pořadí 3: Seznam hráčů (Aktivní karta) */
     #players-list {
         flex-direction: column; 
         gap: 0; 
@@ -147,45 +137,32 @@ button { padding: 10px 15px; margin: 5px; border-radius: 5px; background-color: 
         order: 3;
     }
 
-    /* KLÍČOVÝ KROK: Skryje NEAKTIVNÍ karty */
-    #players-list.game-active .player-card:not(.active) {
-        display: none !important; 
-    }
-
-    /* KARTA AKTIVNÍHO HRÁČE: Mininalistická verze - ZDE JE AGRESIVNÍ ZMENŠENÍ */
+    /* KARTA AKTIVNÍHO HRÁČE: Minimalistická verze */
     .player-card.active {
-        display: block !important; 
-        order: -2; 
-        width: 100%;
+        /* Agresivní minimalizace vertikálního prostoru */
+        padding: 5px 10px !important; 
         margin: 0; 
-        padding: 5px 10px !important; /* Absolutní minimum paddingu */
         border-radius: 0;
         border-top: 3px solid #2ecc71; 
         border-bottom: 0; 
     }
     
-    /* VŠECHNY PRVKY UVNITŘ AKTIVNÍ KARTY: Nulové mezery pro kompresi */
-    .player-card.active h3, 
-    .player-card.active p {
-        margin: 0 !important; 
-        padding: 0;
-        line-height: 1.2;
-    }
-    .player-card.active .score-remaining strong {
-        font-size: 1.7em; 
+    /* Skryje NEAKTIVNÍ karty */
+    #players-list.game-active .player-card:not(.active) {
+        display: none !important; 
     }
 
-    /* ZAJIŠTĚNÍ, ŽE INPUT JE PŘILEPEN K AKTIVNÍ KARTĚ */
+    /* Pořadí 4: Zadávání skóre */
     #dart-input {
-        margin-top: 0 !important;
-        margin-bottom: 10px; 
+        margin-top: 0 !important; /* Přilepení k aktivní kartě */
+        margin-bottom: 0; /* Bez spodní mezery */
         padding: 10px;
         border-radius: 0;
         border-top: 0; 
-        order: 4; /* Pořadí 4: Zadávání skóre */
+        order: 4; 
     }
 
-    /* KLÍČOVÁ OPRAVA: Zobrazení tlačítek skóre */
+    /* TLAČÍTKA SKÓRE: Oprava zobrazení mřížky */
     #score-buttons {
         display: grid !important; 
         grid-template-columns: repeat(6, 1fr) !important;
