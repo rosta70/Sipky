@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Počítadlo Šipek</title>
     <link rel="stylesheet" href="./index.css" />
+    <!-- Přidán překladač Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="importmap">
 {
   "imports": {
@@ -16,11 +18,10 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <!-- Změněn typ skriptu, aby ho Babel přeložil -->
+    <script type="text/babel" src="./index.tsx"></script>
+  </body>
 </html>
