@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+// Fix: Import from @google/genai library instead of using a global variable. This fixes "Cannot find name 'genai'".
 import { GoogleGenAI, Type } from '@google/genai';
 
-// API klíč se bude inicializovat až v případě potřeby, aby nedošlo k chybě při startu.
-let ai = null;
+// Fix: Initialize GoogleGenAI with API key from environment variables as per guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -111,25 +112,7 @@ const App = () => {
   }, [newPlayerName, players, gameMode]);
     
   const addAiPlayer = useCallback(() => {
-    // V tomto prostředí (GitHub Pages) nemáme bezpečný způsob, jak spravovat API klíč.
-    // Proto funkce AI vždy zobrazí upozornění.
-    // Pro plnou funkčnost by bylo nutné aplikaci "sestavit" (build) s klíčem v .env souboru.
-    if (!ai) {
-        // Zkusíme se zeptat na klíč, pokud ještě není nastaven.
-        const apiKey = prompt("Zadejte prosím svůj Google Gemini API klíč:");
-        if (apiKey) {
-            try {
-                ai = new GoogleGenAI({ apiKey: apiKey });
-            } catch (e) {
-                alert("Nastavení AI se nezdařilo. Zkontrolujte prosím API klíč.");
-                return;
-            }
-        } else {
-             alert("Funkce AI hráče je nedostupná. Pro aktivaci je potřeba zadat platný API klíč.");
-             return;
-        }
-    }
-
+    // Fix: Removed insecure API key prompt. The AI client is now initialized securely at the module level.
     const aiPlayerName = 'Gemini Bot';
     if (!players.find(p => p.name === aiPlayerName)) {
       setPlayers([...players, { name: aiPlayerName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
@@ -247,11 +230,7 @@ const App = () => {
   }, [currentThrows, multiplier, players, currentPlayerIndex, turnStartingScore, recordAndNextPlayer, speak, finishMode, currentGame]);
 
   const handleAITurn = useCallback(async () => {
-    if (!ai) {
-        speak("Nemohu hrát, nejsem správně nakonfigurován.");
-        recordAndNextPlayer([]);
-        return;
-    }
+    // Fix: Removed redundant check for 'ai' instance as it's now guaranteed to be initialized.
     setIsAiThinking(true);
     const currentPlayer = players[currentPlayerIndex];
     speak(`${currentPlayer.name} přemýšlí.`);
