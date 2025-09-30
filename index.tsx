@@ -1,4 +1,4 @@
-// FIX: Add React and ReactDOM imports to resolve UMD global errors and use the modern createRoot API.
+// FIX: Add missing React and ReactDOM imports. The previous code was incorrectly relying on global variables.
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -39,7 +39,7 @@ const checkoutGuide = {
   9: '1, D4', 8: 'D4', 7: '3, D2', 6: 'D3', 5: '1, D2', 4: 'D2', 3: '1, D1', 2: 'D1',
 };
 
-const formatThrow = (t) => {
+const formatThrow = (t: { value: number; multiplier: number; }) => {
     if (!t || typeof t.value === 'undefined') return '?';
     if (t.value === 25) return t.multiplier === 2 ? 'D-BULL' : 'BULL';
     switch (t.multiplier) {
@@ -49,7 +49,7 @@ const formatThrow = (t) => {
     }
 };
 
-const HistoryEntry = ({ game }) => {
+const HistoryEntry = ({ game }: { game: any }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     
     return(
@@ -70,11 +70,11 @@ const HistoryEntry = ({ game }) => {
                 </tr>
               </thead>
               <tbody>
-                {game.turns.map((turn, i) => (
+                {game.turns.map((turn: any, i: number) => (
                   <tr key={i}>
                     <td>{turn.player}</td>
                     <td>{turn.throws.map(formatThrow).join(', ')}</td>
-                    <td>{turn.throws.reduce((acc, t) => acc + t.score, 0)}</td>
+                    <td>{turn.throws.reduce((acc: number, t: { score: number; }) => acc + t.score, 0)}</td>
                     <td>{turn.startingScore} → {turn.endingScore}</td>
                   </tr>
                 ))}
@@ -88,28 +88,28 @@ const HistoryEntry = ({ game }) => {
 
 const App = () => {
   const [view, setView] = useState('setup');
-  const [players, setPlayers] = useState([]);
-  const [gameHistory, setGameHistory] = useState([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [gameHistory, setGameHistory] = useState<any[]>([]);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [gameMode, setGameMode] = useState(501);
   const [finishMode, setFinishMode] = useState('double');
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [currentThrows, setCurrentThrows] = useState([]);
+  const [currentThrows, setCurrentThrows] = useState<any[]>([]);
   const [multiplier, setMultiplier] = useState(1);
-  const [winner, setWinner] = useState(null);
+  const [winner, setWinner] = useState<any | null>(null);
   const [turnStartingScore, setTurnStartingScore] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [confirmationAction, setConfirmationAction] = useState(null);
-  const [currentGame, setCurrentGame] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState<any | null>(null);
+  const [currentGame, setCurrentGame] = useState<any | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
    useEffect(() => {
     try {
       const savedState = window.localStorage.getItem('darts-scorer-state');
       if (savedState) {
         const { players: savedPlayers, gameHistory: savedHistory } = JSON.parse(savedState);
-        if (savedPlayers) setPlayers(savedPlayers.map((p) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
+        if (savedPlayers) setPlayers(savedPlayers.map((p: any) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
         if (savedHistory) setGameHistory(savedHistory);
       }
     } catch (error) {
@@ -127,7 +127,7 @@ const App = () => {
   }, [players, gameHistory]);
 
 
-  const speak = useCallback((text) => {
+  const speak = useCallback((text: string) => {
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -160,7 +160,7 @@ const App = () => {
     alert('Funkce AI soupeře není v této online verzi dostupná z bezpečnostních důvodů (vyžaduje API klíč). Aplikace je plně funkční pro hru více hráčů.');
   }, []);
 
-  const removePlayer = useCallback((name) => {
+  const removePlayer = useCallback((name: string) => {
     setPlayers(players.filter(p => p.name !== name));
   }, [players]);
 
@@ -188,7 +188,7 @@ const App = () => {
     }
   }, [players, gameMode, finishMode, speak]);
     
-  const recordAndNextPlayer = useCallback((lastThrows) => {
+  const recordAndNextPlayer = useCallback((lastThrows: any[]) => {
       const currentPlayer = players[currentPlayerIndex];
       const newTurn = {
           player: currentPlayer.name,
@@ -218,7 +218,7 @@ const App = () => {
       speak(`${players[nextIndex].name}, jsi na řadě. Zbývá ti ${players[nextIndex].score}.`);
   }, [currentPlayerIndex, players, turnStartingScore, speak]);
 
- const handleScore = useCallback((score) => {
+ const handleScore = useCallback((score: number) => {
     const throwScore = score * multiplier;
     const newThrow = { value: score, multiplier, score: throwScore };
     const newThrows = [...currentThrows, newThrow];
@@ -288,7 +288,7 @@ const App = () => {
     }
   }, [view, currentPlayerIndex, players, winner, isAiThinking, handleAITurn]);
     
-  const handleMultiplier = useCallback((m) => {
+  const handleMultiplier = useCallback((m: number) => {
     setMultiplier(current => (current === m ? 1 : m));
   }, []);
 
@@ -337,7 +337,7 @@ const App = () => {
     downloadAnchorNode.remove();
   }, [players, gameHistory]);
 
-  const handleImportHistory = useCallback((event) => {
+  const handleImportHistory = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -348,7 +348,7 @@ const App = () => {
             if (typeof text !== 'string') throw new Error("File is not readable");
             const importedState = JSON.parse(text);
             if (importedState.players && importedState.gameHistory) {
-                setPlayers(importedState.players.map((p) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
+                setPlayers(importedState.players.map((p: any) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
                 setGameHistory(importedState.gameHistory);
                 alert("Historie byla úspěšně importována!");
             } else {
@@ -360,7 +360,7 @@ const App = () => {
         }
     };
     reader.readAsText(file);
-    event.target.value = ''; // Reset input
+    if(event.target) event.target.value = ''; // Reset input
   }, []);
 
   const renderSetupScreen = () => (
@@ -406,11 +406,11 @@ const App = () => {
     </div>
   );
   
-   const renderPlayerCard = (player, index) => {
+   const renderPlayerCard = (player: any, index: number) => {
     const isActive = index === currentPlayerIndex;
     const turnThrows = currentThrows.length > 0 && isActive ? currentThrows : player.lastTurnThrows;
     const totalTurnScore = turnThrows.reduce((sum, t) => sum + (t?.score || 0), 0);
-    const checkout = player.score <= 170 && player.score > 1 && checkoutGuide[player.score];
+    const checkout = player.score <= 170 && player.score > 1 && (checkoutGuide as any)[player.score];
 
     return (
         <div key={player.name} className={`player-card ${isActive ? 'active' : ''}`}>
@@ -504,11 +504,11 @@ const App = () => {
     const playerStats = players.map(player => {
         const playerTurns = allTurns.filter(t => t.player === player.name);
         const totalThrowsCount = playerTurns.reduce((sum, turn) => sum + turn.throws.length, 0);
-        const totalScore = playerTurns.reduce((sum, turn) => sum + turn.throws.reduce((ts, t) => ts + t.score, 0), 0);
+        const totalScore = playerTurns.reduce((sum, turn) => sum + turn.throws.reduce((ts: number, t: { score: number; }) => ts + t.score, 0), 0);
         
         let bestTurnScore = 0;
         playerTurns.forEach(turn => {
-            const turnScore = turn.throws.reduce((acc, t) => acc + t.score, 0);
+            const turnScore = turn.throws.reduce((acc: number, t: { score: number; }) => acc + t.score, 0);
             if (turnScore > bestTurnScore) {
                 bestTurnScore = turnScore;
             }
@@ -614,5 +614,6 @@ const App = () => {
   );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// Aplikace se nyní připojí k DOM pomocí globální proměnné ReactDOM
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(<App />);
