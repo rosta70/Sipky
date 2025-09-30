@@ -1,4 +1,4 @@
-// Fix: Add imports for React and ReactDOM to resolve UMD global errors.
+// Fix: Import React and ReactDOM to use as ES modules, which resolves UMD global errors.
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -43,8 +43,58 @@ const checkoutGuide = {
   9: '1, D4', 8: 'D4', 7: '3, D2', 6: 'D3', 5: '1, D2', 4: 'D2', 3: '1, D1', 2: 'D1',
 };
 
+// Fix: Moved formatThrow to module scope to be accessible by the new HistoryEntry component and other parts of the app.
+const formatThrow = (t) => {
+    if (!t || typeof t.value === 'undefined') return '?';
+    if (t.value === 25) return t.multiplier === 2 ? 'D-BULL' : 'BULL';
+    switch (t.multiplier) {
+        case 3: return `T${t.value}`;
+        case 2: return `D${t.value}`;
+        default: return `${t.value}`;
+    }
+};
+
+// Fix: Extracted renderHistoryEntry into a standalone HistoryEntry component
+// to resolve an invalid hook call (useState inside a nested function in a loop).
+const HistoryEntry = ({ game }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    return(
+      <div className="history-entry">
+        <div className="history-summary" onClick={() => setIsExpanded(!isExpanded)}>
+            <span><strong>Vítěz: {game.winner}</strong> ({game.mode}, {new Date(game.startTime).toLocaleString('cs-CZ')})</span>
+            <span>{isExpanded ? '⌃' : '⌄'}</span>
+        </div>
+        {isExpanded && (
+          <div className="history-details">
+            <table className="turn-table">
+              <thead>
+                <tr>
+                  <th>Hráč</th>
+                  <th>Hody</th>
+                  <th>Skóre kola</th>
+                  <th>Zbývalo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {game.turns.map((turn, i) => (
+                  <tr key={i}>
+                    <td>{turn.player}</td>
+                    <td>{turn.throws.map(formatThrow).join(', ')}</td>
+                    <td>{turn.throws.reduce((acc, t) => acc + t.score, 0)}</td>
+                    <td>{turn.startingScore} → {turn.endingScore}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+};
+
 const App = () => {
-  // Fix: Removed local destructuring of React hooks. They are now imported at the top of the file.
+  // Fix: Hooks are now imported from 'react' at the top of the file.
   const [view, setView] = useState('setup');
   const [players, setPlayers] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
@@ -322,17 +372,6 @@ const App = () => {
     event.target.value = ''; // Reset input
   }, []);
 
-  const formatThrow = (t) => {
-    if (!t || typeof t.value === 'undefined') return '?';
-    if (t.value === 25) return t.multiplier === 2 ? 'D-BULL' : 'BULL';
-    switch (t.multiplier) {
-        case 3: return `T${t.value}`;
-        case 2: return `D${t.value}`;
-        default: return `${t.value}`;
-    }
-  };
-
-
   const renderSetupScreen = () => (
     <div className="setup-container">
       <h2>Nastavení hry</h2>
@@ -469,43 +508,6 @@ const App = () => {
     </div>
   );
 
-  const renderHistoryEntry = (game) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    
-    return(
-      <div className="history-entry">
-        <div className="history-summary" onClick={() => setIsExpanded(!isExpanded)}>
-            <span><strong>Vítěz: {game.winner}</strong> ({game.mode}, {new Date(game.startTime).toLocaleString('cs-CZ')})</span>
-            <span>{isExpanded ? '⌃' : '⌄'}</span>
-        </div>
-        {isExpanded && (
-          <div className="history-details">
-            <table className="turn-table">
-              <thead>
-                <tr>
-                  <th>Hráč</th>
-                  <th>Hody</th>
-                  <th>Skóre kola</th>
-                  <th>Zbývalo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {game.turns.map((turn, i) => (
-                  <tr key={i}>
-                    <td>{turn.player}</td>
-                    <td>{turn.throws.map(formatThrow).join(', ')}</td>
-                    <td>{turn.throws.reduce((acc, t) => acc + t.score, 0)}</td>
-                    <td>{turn.startingScore} → {turn.endingScore}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   const renderStatsScreen = () => {
     const allTurns = gameHistory.flatMap(g => g.turns);
     const playerStats = players.map(player => {
@@ -565,7 +567,8 @@ const App = () => {
                 <h3 className="history-title">Historie her</h3>
                 <div className="game-history">
                     {gameHistory.length > 0 ? (
-                      [...gameHistory].reverse().map(renderHistoryEntry)
+                      // Fix: Use the new HistoryEntry component to render game history entries.
+                      [...gameHistory].reverse().map(game => <HistoryEntry key={game.id} game={game} />)
                     ) : (
                       <p>Zatím nebyly odehrány žádné hry.</p>
                     )}
