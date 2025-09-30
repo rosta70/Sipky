@@ -1,48 +1,24 @@
 <!DOCTYPE html>
 <html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ŠIPKY - Počítadlo skóre</title>
-    <link rel="stylesheet" href="style.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Počítadlo Šipek</title>
+    <link rel="stylesheet" href="index.css" />
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
 </head>
-<body>
-    <div id="app-container">
-        <h1>ŠIPKY - Počítadlo skóre</h1>
-
-        <div id="setup-section">
-            <button onclick="startGame(101)">Start 101</button>
-            <button onclick="startGame(301)">Start 301</button>
-            <button onclick="startGame(501)">Start 501</button>
-            <button onclick="addPlayer()">Přidat Hráče</button>
-            <button onclick="window.location.href='history.html'" style="background-color: #3498db;">Výsledková listina</button>
-            
-            <!-- STATICKÉ TLAČÍTKO S VYSOKOU PRIORITOU Z-INDEXU -->
-            <button id="end-game-btn" onclick="promptEndGame()" style="background-color: #9b59b6; display: none; position: relative; z-index: 9999;">Ukončit hru</button>
-        </div>
-
-        <div id="score-summary-mobile"></div>
-
-        <div id="players-list">
-            <!-- Karty hráčů se vkládají zde -->
-        </div>
-
-        <div id="dart-input" class="dart-input-hidden">
-            <h2 id="current-player-title">Zadání Hodu - Aktuální hráč: <span id="current-player-name"></span></h2>
-            
-            <div id="multiplier-buttons">
-                <button onclick="setMultiplier(2)" class="multiplier">Double (x2)</button>
-                <button onclick="setMultiplier(3)" class="multiplier">Triple (x3)</button>
-                <p>Násobitel: <span id="current-multiplier">1x</span></p>
-            </div>
-            
-            <div id="score-buttons">
-                <!-- Tlačítka skóre se vykreslují JS -->
-            </div>
-
-            <button onclick="undoLastThrow()">Vrácení zpět (Undo)</button>
-        </div>
-    </div>
-    <script src="script.js"></script>
-</body>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+  </body>
 </html>
