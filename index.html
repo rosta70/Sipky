@@ -5,19 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Počítadlo Šipek</title>
     <link rel="stylesheet" href="./index.css" />
-    <!-- Načtení knihoven, které vytvoří globální proměnné (React, ReactDOM) -->
+    <!-- Načtení knihoven, které vytvoří globální proměnné (React, ReactDOM) - TOTO JE JEDINÝ SPRÁVNÝ ZPŮSOB -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <!-- Přidána knihovna Gemini AI přímo (vytvoří globální 'genai') -->
     <script src="https://cdn.jsdelivr.net/npm/@google/genai/dist/index.min.js"></script>
     <!-- Přidán překladač Babel pro JSX a ES6+ -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- ODSTRANĚN KONFLIKTNÍ IMPORT MAP -->
 <script type="importmap">
 {
   "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
     "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
   }
 }
 </script>
