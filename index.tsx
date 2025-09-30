@@ -1,10 +1,6 @@
-// Fix: Import React and ReactDOM to use as ES modules, which resolves UMD global errors.
+// FIX: Add React and ReactDOM imports to resolve UMD global errors and use the modern createRoot API.
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-
-// Fix: Removed unused and undefined 'genai' constant. The AI functionality
-// that would use this constant is disabled in this version of the application,
-// so this line was a leftover causing a reference error.
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -43,7 +39,6 @@ const checkoutGuide = {
   9: '1, D4', 8: 'D4', 7: '3, D2', 6: 'D3', 5: '1, D2', 4: 'D2', 3: '1, D1', 2: 'D1',
 };
 
-// Fix: Moved formatThrow to module scope to be accessible by the new HistoryEntry component and other parts of the app.
 const formatThrow = (t) => {
     if (!t || typeof t.value === 'undefined') return '?';
     if (t.value === 25) return t.multiplier === 2 ? 'D-BULL' : 'BULL';
@@ -54,8 +49,6 @@ const formatThrow = (t) => {
     }
 };
 
-// Fix: Extracted renderHistoryEntry into a standalone HistoryEntry component
-// to resolve an invalid hook call (useState inside a nested function in a loop).
 const HistoryEntry = ({ game }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     
@@ -94,7 +87,6 @@ const HistoryEntry = ({ game }) => {
 };
 
 const App = () => {
-  // Fix: Hooks are now imported from 'react' at the top of the file.
   const [view, setView] = useState('setup');
   const [players, setPlayers] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
@@ -111,7 +103,6 @@ const App = () => {
   const [currentGame, setCurrentGame] = useState(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const fileInputRef = useRef(null);
-  // AI Ref a useEffect pro inicializaci jsou odstraněny, protože v prohlížeči nelze bezpečně pracovat s API klíčem.
 
    useEffect(() => {
     try {
@@ -567,7 +558,6 @@ const App = () => {
                 <h3 className="history-title">Historie her</h3>
                 <div className="game-history">
                     {gameHistory.length > 0 ? (
-                      // Fix: Use the new HistoryEntry component to render game history entries.
                       [...gameHistory].reverse().map(game => <HistoryEntry key={game.id} game={game} />)
                     ) : (
                       <p>Zatím nebyly odehrány žádné hry.</p>
