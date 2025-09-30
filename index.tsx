@@ -1,42 +1,22 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import { GoogleGenAI, Type } from '@google/genai';
 
-type Throw = {
-  value: number; // The base value hit (1-20, 25 for bull)
-  multiplier: number; // 1, 2, or 3
-  score: number; // The resulting score (value * multiplier)
-};
+// API klíč je nutné nastavit v prostředí, kde je aplikace spuštěna.
+// Např. pomocí Vite a .env souboru: VITE_API_KEY=váš_klíč
+// V kódu se pak přistupuje přes import.meta.env.VITE_API_KEY
+// Pro zjednodušení a dodržení pravidel zde předpokládáme, že process.env.API_KEY existuje.
+let ai;
+try {
+  if (process.env.API_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  }
+} catch (e) {
+  console.warn("API klíč pro Gemini není nastaven. Funkce AI hráče nebude dostupná.");
+}
 
-type Player = {
-  name: string;
-  score: number;
-  lastTurnThrows: Throw[];
-  wins: number;
-};
 
-type Turn = {
-    player: string;
-    throws: Throw[];
-    startingScore: number;
-    endingScore: number;
-};
-
-type Game = {
-    id: string;
-    startTime: string;
-    endTime: string | null;
-    mode: GameMode;
-    finishMode: FinishMode;
-    winner: string | null;
-    players: string[];
-    turns: Turn[];
-};
-
-type View = 'setup' | 'game' | 'stats' | 'winner';
-type GameMode = 101 | 301 | 501;
-type FinishMode = 'double' | 'straight';
-
-const checkoutGuide: { [key: number]: string } = {
+const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
   160: 'T20, T20, D20', 158: 'T20, T20, D19', 157: 'T20, T19, D20', 156: 'T20, T20, D18',
   155: 'T20, T19, D19', 154: 'T20, T18, D20', 153: 'T20, T19, D18', 152: 'T20, T20, D16',
@@ -74,28 +54,29 @@ const checkoutGuide: { [key: number]: string } = {
 };
 
 const App = () => {
-  const [view, setView] = useState<View>('setup');
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [gameHistory, setGameHistory] = useState<Game[]>([]);
+  const [view, setView] = useState('setup');
+  const [players, setPlayers] = useState([]);
+  const [gameHistory, setGameHistory] = useState([]);
   const [newPlayerName, setNewPlayerName] = useState('');
-  const [gameMode, setGameMode] = useState<GameMode>(501);
-  const [finishMode, setFinishMode] = useState<FinishMode>('double');
+  const [gameMode, setGameMode] = useState(501);
+  const [finishMode, setFinishMode] = useState('double');
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [currentThrows, setCurrentThrows] = useState<Throw[]>([]);
+  const [currentThrows, setCurrentThrows] = useState([]);
   const [multiplier, setMultiplier] = useState(1);
-  const [winner, setWinner] = useState<Player | null>(null);
-  const [turnStartingScore, setTurnStartingScore] = useState<number>(0);
+  const [winner, setWinner] = useState(null);
+  const [turnStartingScore, setTurnStartingScore] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [confirmationAction, setConfirmationAction] = useState<'restart' | 'setup' | null>(null);
-  const [currentGame, setCurrentGame] = useState<Game | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
+  const [currentGame, setCurrentGame] = useState(null);
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  const fileInputRef = useRef(null);
 
    useEffect(() => {
     try {
       const savedState = window.localStorage.getItem('darts-scorer-state');
       if (savedState) {
         const { players: savedPlayers, gameHistory: savedHistory } = JSON.parse(savedState);
-        if (savedPlayers) setPlayers(savedPlayers.map((p: any) => ({...p, score: 0, lastTurnThrows: []})));
+        if (savedPlayers) setPlayers(savedPlayers.map((p) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
         if (savedHistory) setGameHistory(savedHistory);
       }
     } catch (error) {
@@ -105,14 +86,14 @@ const App = () => {
 
   useEffect(() => {
     try {
-       const stateToSave = { players: players.map(({ name, wins }) => ({ name, wins })), gameHistory };
+       const stateToSave = { players: players.map(({ name, wins, isAI }) => ({ name, wins, isAI })), gameHistory };
        window.localStorage.setItem('darts-scorer-state', JSON.stringify(stateToSave));
     } catch (error) {
       console.error("Failed to save state to localStorage", error);
     }
   }, [players, gameHistory]);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text) => {
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -121,7 +102,7 @@ const App = () => {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Chyba při syntéze řeči:", error);
     }
   }, []);
@@ -135,12 +116,23 @@ const App = () => {
 
   const addPlayer = useCallback(() => {
     if (newPlayerName.trim() && !players.find(p => p.name === newPlayerName.trim())) {
-      setPlayers([...players, { name: newPlayerName.trim(), score: gameMode, lastTurnThrows: [], wins: 0 }]);
+      setPlayers([...players, { name: newPlayerName.trim(), score: gameMode, lastTurnThrows: [], wins: 0, isAI: false }]);
       setNewPlayerName('');
     }
   }, [newPlayerName, players, gameMode]);
+    
+  const addAiPlayer = useCallback(() => {
+    if (!ai) {
+        alert("Funkce AI hráče je nedostupná. API klíč pro Gemini není nakonfigurován.");
+        return;
+    }
+    const aiPlayerName = 'Gemini Bot';
+    if (!players.find(p => p.name === aiPlayerName)) {
+      setPlayers([...players, { name: aiPlayerName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
+    }
+  }, [players, gameMode]);
 
-  const removePlayer = useCallback((name: string) => {
+  const removePlayer = useCallback((name) => {
     setPlayers(players.filter(p => p.name !== name));
   }, [players]);
 
@@ -153,7 +145,7 @@ const App = () => {
       setWinner(null);
       setView('game');
       setTurnStartingScore(gameMode);
-       const newGame: Game = {
+       const newGame = {
         id: `game-${Date.now()}`,
         startTime: new Date().toISOString(),
         endTime: null,
@@ -168,9 +160,9 @@ const App = () => {
     }
   }, [players, gameMode, finishMode, speak]);
     
-  const recordAndNextPlayer = useCallback((lastThrows: Throw[]) => {
+  const recordAndNextPlayer = useCallback((lastThrows) => {
       const currentPlayer = players[currentPlayerIndex];
-      const newTurn: Turn = {
+      const newTurn = {
           player: currentPlayer.name,
           throws: lastThrows,
           startingScore: turnStartingScore,
@@ -198,70 +190,153 @@ const App = () => {
       speak(`${players[nextIndex].name}, jsi na řadě. Zbývá ti ${players[nextIndex].score}.`);
   }, [currentPlayerIndex, players, turnStartingScore, speak]);
 
- const handleScore = useCallback((score: number) => {
+ const handleScore = useCallback((score) => {
     const throwScore = score * multiplier;
-    const newThrow: Throw = { value: score, multiplier, score: throwScore };
+    const newThrow = { value: score, multiplier, score: throwScore };
     const newThrows = [...currentThrows, newThrow];
     setCurrentThrows(newThrows);
 
-    const updatedPlayers = [...players];
-    const currentPlayer = updatedPlayers[currentPlayerIndex];
-    const newScore = currentPlayer.score - throwScore;
+    setPlayers(currentPlayers => {
+        const updatedPlayers = [...currentPlayers];
+        const currentPlayer = updatedPlayers[currentPlayerIndex];
+        const newScore = currentPlayer.score - throwScore;
 
-    if (newScore < 0 || newScore === 1) { // Bust
-      currentPlayer.score = turnStartingScore;
-      setPlayers(updatedPlayers);
-      speak(`Přešlap! ${currentPlayer.name} má zpět ${turnStartingScore}.`);
-      recordAndNextPlayer(newThrows);
-      return;
-    }
+        if (newScore < 0 || newScore === 1) { // Bust
+          currentPlayer.score = turnStartingScore;
+          speak(`Přešlap! ${currentPlayer.name} má zpět ${turnStartingScore}.`);
+          recordAndNextPlayer(newThrows);
+          return updatedPlayers;
+        }
 
-    if (newScore === 0) { // Winner
-      if (finishMode === 'double' && multiplier !== 2 && score !== 25) { // Bull (50) is D25
-         currentPlayer.score = turnStartingScore;
-         setPlayers(updatedPlayers);
-         speak(`Přešlap! Hru je nutné ukončit doublem. ${currentPlayer.name} má zpět ${turnStartingScore}.`);
-         recordAndNextPlayer(newThrows);
-         return;
-      }
-        
-      const winningTurn: Turn = {
-        player: currentPlayer.name,
-        throws: newThrows,
-        startingScore: turnStartingScore,
-        endingScore: 0,
-      };
+        if (newScore === 0) { // Winner
+          if (finishMode === 'double' && multiplier !== 2 && score !== 25) { // Bull (50) is D25
+             currentPlayer.score = turnStartingScore;
+             speak(`Přešlap! Hru je nutné ukončit doublem. ${currentPlayer.name} má zpět ${turnStartingScore}.`);
+             recordAndNextPlayer(newThrows);
+             return updatedPlayers;
+          }
+            
+          const winningTurn = { player: currentPlayer.name, throws: newThrows, startingScore: turnStartingScore, endingScore: 0};
+          if (currentGame) {
+            const finishedGame = { ...currentGame, endTime: new Date().toISOString(), winner: currentPlayer.name, turns: [...currentGame.turns, winningTurn] };
+            setGameHistory(prevHistory => [...prevHistory, finishedGame]);
+            setCurrentGame(null);
+          }
 
-      if (currentGame) {
-        const finishedGame: Game = {
-            ...currentGame,
-            endTime: new Date().toISOString(),
-            winner: currentPlayer.name,
-            turns: [...currentGame.turns, winningTurn],
-        };
-        setGameHistory(prevHistory => [...prevHistory, finishedGame]);
-        setCurrentGame(null);
-      }
+          const newWinner = { ...currentPlayer, score: 0 };
+          setWinner(newWinner);
+          setView('winner');
+          speak(`Konec hry! Vítězem je ${newWinner.name}! Gratuluji!`);
+          // Update wins count in the final player list
+          return updatedPlayers.map(p => p.name === newWinner.name ? { ...p, score: 0, wins: p.wins + 1, lastTurnThrows: newThrows } : p);
+        }
 
-      const newWinner = { ...currentPlayer, score: 0 };
-      setWinner(newWinner);
-      setPlayers(players.map(p => p.name === newWinner.name ? { ...p, score: 0, wins: p.wins + 1, lastTurnThrows: newThrows } : p));
-      setView('winner');
-      speak(`Konec hry! Vítězem je ${newWinner.name}! Gratuluji!`);
-      return;
-    }
+        currentPlayer.score = newScore;
+        speak(`${throwScore}`);
+        setMultiplier(1);
 
-    currentPlayer.score = newScore;
-    setPlayers(updatedPlayers);
-    speak(`${throwScore}`);
-    setMultiplier(1);
-
-    if (newThrows.length === 3) {
-      recordAndNextPlayer(newThrows);
-    }
+        if (newThrows.length === 3) {
+          recordAndNextPlayer(newThrows);
+        }
+        return updatedPlayers;
+    });
   }, [currentThrows, multiplier, players, currentPlayerIndex, turnStartingScore, recordAndNextPlayer, speak, finishMode, currentGame]);
+
+  const handleAITurn = useCallback(async () => {
+    setIsAiThinking(true);
+    const currentPlayer = players[currentPlayerIndex];
+    speak(`${currentPlayer.name} přemýšlí.`);
+
+    const throwSchema = {
+      type: Type.OBJECT,
+      properties: {
+        value: { type: Type.NUMBER, description: "Číslo, které bylo trefeno (1-20, 25 pro bull)." },
+        multiplier: { type: Type.NUMBER, description: "Násobič (1 pro single, 2 pro double, 3 pro triple)." },
+        score: { type: Type.NUMBER, description: "Celkové skóre za hod (value * multiplier)." }
+      },
+      required: ["value", "multiplier", "score"]
+    };
+    const responseSchema = { type: Type.ARRAY, items: throwSchema, description: "Pole s maximálně třemi hody." };
+    const prompt = `Jsi expert na šipky a hraješ hru ${gameMode} s ukončením na ${finishMode}. Tvůj aktuální stav je ${currentPlayer.score}. Cílem je vyhrát. Tvoje úroveň je středně pokročilá. Vrať mi tvé tři hody jako JSON pole objektů. Každý objekt reprezentuje jeden hod. Hraj realisticky, občas můžeš minout cíl a trefit sousední číslo. Pokud můžeš hru ukončit, pokus se o to. Pokud ne, připrav si co nejlepší pozici. Vždy vrať pole, i když je prázdné nebo má méně než 3 hody (např. při vítězství).`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash", contents: prompt,
+            config: { responseMimeType: "application/json", responseSchema: responseSchema },
+        });
+
+        const aiThrows = JSON.parse(response.text.trim());
+        if (!Array.isArray(aiThrows)) throw new Error("AI response was not an array.");
+        
+        let turnThrowsForHistory = [];
+        for (const aiThrow of aiThrows) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            setCurrentThrows(prev => [...prev, aiThrow]);
+            turnThrowsForHistory.push(aiThrow);
+            
+            let turnOutcome = 'continue';
+            
+            setPlayers(currentPlayers => {
+                const updatedPlayers = JSON.parse(JSON.stringify(currentPlayers));
+                const playerToUpdate = updatedPlayers[currentPlayerIndex];
+                const newScore = playerToUpdate.score - aiThrow.score;
+
+                if (newScore < 0 || newScore === 1) { // BUST
+                    playerToUpdate.score = turnStartingScore;
+                    speak(`Přešlap!`);
+                    turnOutcome = 'bust';
+                } else if (newScore === 0) { // WIN?
+                    if (finishMode === 'double' && aiThrow.multiplier !== 2 && aiThrow.value !== 25) {
+                        playerToUpdate.score = turnStartingScore;
+                        speak(`Přešlap, špatný double!`);
+                        turnOutcome = 'bust';
+                    } else {
+                        playerToUpdate.score = 0;
+                        const winningTurn = { player: playerToUpdate.name, throws: turnThrowsForHistory, startingScore: turnStartingScore, endingScore: 0 };
+                        if (currentGame) {
+                            const finishedGame = { ...currentGame, endTime: new Date().toISOString(), winner: playerToUpdate.name, turns: [...currentGame.turns, winningTurn] };
+                            setGameHistory(prev => [...prev, finishedGame]);
+                            setCurrentGame(null);
+                        }
+                        const newWinner = { ...playerToUpdate, score: 0 };
+                        setWinner(newWinner);
+                        setView('winner');
+                        speak(`Konec hry! Vítězem je ${newWinner.name}! Gratuluji!`);
+                        turnOutcome = 'win';
+                        return updatedPlayers.map(p => p.name === newWinner.name ? { ...p, score: 0, wins: p.wins + 1, lastTurnThrows: turnThrowsForHistory } : p);
+                    }
+                } else { // CONTINUE
+                    playerToUpdate.score = newScore;
+                    speak(`${aiThrow.score}`);
+                }
+                return updatedPlayers;
+            });
+            
+            if (turnOutcome === 'bust' || turnOutcome === 'win') {
+                if(turnOutcome === 'bust') recordAndNextPlayer(turnThrowsForHistory);
+                setIsAiThinking(false);
+                return;
+            }
+        }
+        recordAndNextPlayer(turnThrowsForHistory);
+
+    } catch (error) {
+        console.error("Chyba při volání Gemini API:", error);
+        speak("Omlouvám se, mám problém s myšlením. Přeskakuji kolo.");
+        recordAndNextPlayer([]);
+    } finally {
+        setIsAiThinking(false);
+    }
+}, [players, currentPlayerIndex, gameMode, finishMode, speak, recordAndNextPlayer, turnStartingScore, currentGame]);
+
+  useEffect(() => {
+    if (view === 'game' && players.length > 0 && players[currentPlayerIndex]?.isAI && !winner && !isAiThinking) {
+        const timer = setTimeout(() => { handleAITurn(); }, 1500);
+        return () => clearTimeout(timer);
+    }
+  }, [view, currentPlayerIndex, players, winner, isAiThinking, handleAITurn]);
     
-  const handleMultiplier = useCallback((m: number) => {
+  const handleMultiplier = useCallback((m) => {
     setMultiplier(current => (current === m ? 1 : m));
   }, []);
 
@@ -298,7 +373,7 @@ const App = () => {
 
   const handleDownloadHistory = useCallback(() => {
     const stateToSave = {
-      players: players.map(({ name, wins }) => ({ name, wins })),
+      players: players.map(({ name, wins, isAI }) => ({ name, wins, isAI })),
       gameHistory
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stateToSave, null, 2));
@@ -310,7 +385,7 @@ const App = () => {
     downloadAnchorNode.remove();
   }, [players, gameHistory]);
 
-  const handleImportHistory = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportHistory = useCallback((event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -321,7 +396,7 @@ const App = () => {
             if (typeof text !== 'string') throw new Error("File is not readable");
             const importedState = JSON.parse(text);
             if (importedState.players && importedState.gameHistory) {
-                setPlayers(importedState.players.map((p: any) => ({...p, score: 0, lastTurnThrows: []})));
+                setPlayers(importedState.players.map((p) => ({...p, score: 0, lastTurnThrows: [], isAI: p.isAI || false })));
                 setGameHistory(importedState.gameHistory);
                 alert("Historie byla úspěšně importována!");
             } else {
@@ -336,7 +411,8 @@ const App = () => {
     event.target.value = ''; // Reset input
   }, []);
 
-  const formatThrow = (t: Throw): string => {
+  const formatThrow = (t) => {
+    if (!t || typeof t.value === 'undefined') return '?';
     if (t.value === 25) return t.multiplier === 2 ? 'D-BULL' : 'BULL';
     switch (t.multiplier) {
         case 3: return `T${t.value}`;
@@ -358,11 +434,12 @@ const App = () => {
           onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
         />
         <button onClick={addPlayer} disabled={!newPlayerName.trim()}>Přidat</button>
+        <button onClick={addAiPlayer} className="ai-btn">Přidat AI</button>
       </div>
       <ul className="player-list-setup">
         {players.map(p => (
           <li key={p.name}>
-            {p.name}
+            <span>{p.name} {p.isAI && <span className="bot-tag">BOT</span>}</span>
             <button onClick={() => removePlayer(p.name)}>X</button>
           </li>
         ))}
@@ -382,338 +459,4 @@ const App = () => {
         <button onClick={startGame} disabled={players.length < 1} className="start-game-btn">
           Zahájit hru
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="secondary-btn">Importovat historii</button>
-        <input type="file" ref={fileInputRef} onChange={handleImportHistory} style={{display: 'none'}} accept=".json"/>
-      </div>
-    </div>
-  );
-
-  const renderGameScreen = () => {
-      if (players.length === 0) return renderSetupScreen();
-      const currentPlayer = players[currentPlayerIndex];
-
-      return (
-        <div className="game-container">
-            <div className="scoreboard">
-                <h2>Skóre</h2>
-                {players.map((p, index) => (
-                    <div key={p.name} className={`player-card ${index === currentPlayerIndex ? 'active' : ''}`}>
-                        <div className="player-card-header">
-                            <h3>{p.name}</h3>
-                            <span className="player-wins">Výhry: {p.wins}</span>
-                        </div>
-                        <div className="score" key={`${p.name}-${p.score}`}>{p.score}</div>
-                        {index === currentPlayerIndex && checkoutGuide[p.score] && (
-                            <div className="checkout-suggestion">
-                                <span role="img" aria-label="Target">🎯</span> Doporučení: <strong>{checkoutGuide[p.score]}</strong>
-                            </div>
-                        )}
-                        <div className="turn-info">
-                            {index === currentPlayerIndex ? (
-                                <div className="current-throws-container">
-                                    {currentThrows.map((t, i) => (
-                                        <span key={i} className={`throw-pill multiplier-${t.multiplier}`}>
-                                            {formatThrow(t)}
-                                        </span>
-                                    ))}
-                                    {[...Array(3 - currentThrows.length)].map((_, i) => (
-                                       <span key={`placeholder-${i}`} className="throw-pill placeholder"></span>
-                                    ))}
-                                </div>
-                            ) : (
-                                <span className="last-turn-throws">
-                                  Poslední kolo: {p.lastTurnThrows.length > 0 ? p.lastTurnThrows.map(formatThrow).join(' | ') : 'N/A'}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <div className="controls">
-                <h3>{`Na řadě: ${currentPlayer.name}`}</h3>
-                 <div className="multiplier-controls">
-                    <button onClick={() => handleMultiplier(2)} className={`multiplier-btn ${multiplier === 2 ? 'active' : ''}`}>Dvojnásobek (D)</button>
-                    <button onClick={() => handleMultiplier(3)} className={`multiplier-btn ${multiplier === 3 ? 'active' : ''}`}>Trojnásobek (T)</button>
-                </div>
-                <div className="numpad">
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
-                        <button key={num} onClick={() => handleScore(num)} className="numpad-btn">{num}</button>
-                    ))}
-                    <button onClick={() => handleScore(25)} className="numpad-btn bull-btn">Bull (25/50)</button>
-                    <button onClick={() => handleScore(0)} className="numpad-btn miss-btn">Chyba / 0</button>
-                </div>
-                <div className="action-controls">
-                    <button onClick={handleUndo} className="action-btn" disabled={currentThrows.length === 0}>Vrátit hod</button>
-                </div>
-            </div>
-        </div>
-    );
-  };
-    
-  const renderWinnerScreen = () => (
-    <div className="winner-screen">
-        <h2>Vítěz!</h2>
-        <p>{winner?.name}</p>
-        <button onClick={startGame}>Nová hra</button>
-        <button onClick={() => setView('setup')}>Změnit nastavení</button>
-    </div>
-  );
-
-  const calculatePlayerStats = (players: Player[], history: Game[]) => {
-      const stats: { [key: string]: any } = {};
-
-      players.forEach(p => {
-          stats[p.name] = {
-              totalThrows: 0,
-              totalScore: 0,
-              singles: {},
-              doubles: {},
-              triples: {},
-          };
-      });
-
-      history.forEach(game => {
-          game.turns.forEach(turn => {
-              if (!stats[turn.player]) return;
-              turn.throws.forEach(throwData => {
-                  if (typeof throwData !== 'object' || throwData === null) return;
-
-                  stats[turn.player].totalThrows++;
-                  stats[turn.player].totalScore += throwData.score;
-
-                  if (throwData.multiplier === 1) {
-                      stats[turn.player].singles[throwData.value] = (stats[turn.player].singles[throwData.value] || 0) + 1;
-                  } else if (throwData.multiplier === 2) {
-                      stats[turn.player].doubles[throwData.value] = (stats[turn.player].doubles[throwData.value] || 0) + 1;
-                  } else if (throwData.multiplier === 3) {
-                      stats[turn.player].triples[throwData.value] = (stats[turn.player].triples[throwData.value] || 0) + 1;
-                  }
-              });
-          });
-      });
-
-      const findMostFrequent = (freqMap: { [key: number]: number }) => {
-          if (Object.keys(freqMap).length === 0) return null;
-          const mostFrequent = Object.entries(freqMap).sort((a, b) => b[1] - a[1])[0];
-          return { value: parseInt(mostFrequent[0]), count: mostFrequent[1] };
-      };
-
-      return players.map(p => {
-          const pStats = stats[p.name];
-          return {
-              name: p.name,
-              wins: p.wins,
-              averagePerThrow: pStats.totalThrows > 0 ? (pStats.totalScore / pStats.totalThrows).toFixed(2) : '0.00',
-              mostFrequentSingle: findMostFrequent(pStats.singles),
-              mostFrequentDouble: findMostFrequent(pStats.doubles),
-              mostFrequentTriple: findMostFrequent(pStats.triples),
-          };
-      });
-  };
-
-
-  const renderStatsScreen = () => {
-    const detailedStats = calculatePlayerStats(players, gameHistory);
-
-    return (
-        <div className="stats-container">
-            <div className="stats-header">
-                <h2>Statistiky</h2>
-                <button onClick={handleDownloadHistory} disabled={players.length === 0} className="secondary-btn">Stáhnout historii (JSON)</button>
-            </div>
-            <h3>Celkové pořadí</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Pořadí</th>
-                        <th>Jméno</th>
-                        <th>Výhry</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {[...players].sort((a, b) => b.wins - a.wins).map((p, index) => (
-                        <tr key={p.name}>
-                            <td>{index + 1}.</td>
-                            <td>{p.name}</td>
-                            <td>{p.wins}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <h3 className="history-title">Podrobné statistiky hráčů</h3>
-            <div className="player-stats-grid">
-                {detailedStats.map(stat => (
-                    <div key={stat.name} className="player-stats-card">
-                        <h4>{stat.name}</h4>
-                        <div className="stat-item">
-                            <span>Průměr na šipku:</span>
-                            <strong>{stat.averagePerThrow !== '0.00' ? stat.averagePerThrow : 'N/A'}</strong>
-                        </div>
-                        <div className="stat-item">
-                            <span>Nejčastější Single:</span>
-                            <strong>{stat.mostFrequentSingle ? `${stat.mostFrequentSingle.value} (${stat.mostFrequentSingle.count}x)` : 'N/A'}</strong>
-                        </div>
-                        <div className="stat-item">
-                            <span>Nejčastější Double:</span>
-                            <strong>{stat.mostFrequentDouble ? `D${stat.mostFrequentDouble.value} (${stat.mostFrequentDouble.count}x)` : 'N/A'}</strong>
-                        </div>
-                        <div className="stat-item">
-                            <span>Nejčastější Triple:</span>
-                            <strong>{stat.mostFrequentTriple ? `T${stat.mostFrequentTriple.value} (${stat.mostFrequentTriple.count}x)` : 'N/A'}</strong>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <h3 className="history-title">Historie Her</h3>
-            <div className="game-history">
-                {gameHistory.length > 0 ? [...gameHistory].reverse().map(game => (
-                    <details key={game.id} className="history-entry">
-                        <summary className="history-summary">
-                            <span><strong>{new Date(game.startTime).toLocaleString('cs-CZ')}</strong></span>
-                            <span>Mód: {game.mode}</span>
-                            <span>Vítěz: <strong>{game.winner || 'N/A'}</strong></span>
-                        </summary>
-                        <div className="history-details">
-                            <table className="turn-table">
-                                <thead>
-                                    <tr>
-                                        <th>Hráč</th>
-                                        <th>Start</th>
-                                        <th>Hody</th>
-                                        <th>Celkem</th>
-                                        <th>Zůstatek</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {game.turns.map((turn, index) => {
-                                        const turnThrows = Array.isArray(turn.throws) 
-                                            ? (turn.throws as any[]).map(t => t?.score ?? t)
-                                            : [];
-                                        const totalTurnScore = turnThrows.reduce((a, b) => a + (b || 0), 0);
-                                        return (
-                                            <tr key={index}>
-                                                <td>{turn.player}</td>
-                                                <td>{turn.startingScore}</td>
-                                                <td>{turnThrows.join(', ')}</td>
-                                                <td>{totalTurnScore}</td>
-                                                <td>{turn.endingScore}</td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </details>
-                )) : <p>Zatím nebyly odehrány žádné hry.</p>}
-            </div>
-        </div>
-    );
-};
-
-    const renderGameMenuModal = () => {
-        if (!isMenuOpen) return null;
-
-        const closeMenu = () => {
-            setIsMenuOpen(false);
-            setConfirmationAction(null);
-        };
-
-        const performRestart = () => {
-            handleRestartGame();
-            closeMenu();
-        };
-
-        const performBackToSetup = () => {
-            handleBackToSetup();
-            closeMenu();
-        };
-        
-        const performShowStats = () => {
-            setView('stats');
-            closeMenu();
-        };
-
-        return (
-            <div className="modal-overlay">
-                <div className="modal-content">
-                    {!confirmationAction && (
-                        <>
-                            <h2>Menu</h2>
-                            <button onClick={() => setConfirmationAction('restart')}>Nová hra</button>
-                            <button onClick={() => setConfirmationAction('setup')}>Zpět do nastavení</button>
-                             <button onClick={performShowStats}>Statistiky</button>
-                            <button onClick={closeMenu} className="secondary-btn">Pokračovat ve hře</button>
-                        </>
-                    )}
-                    {confirmationAction === 'restart' && (
-                        <>
-                            <h2>Nová hra</h2>
-                            <p className="confirmation-message">Opravdu chcete restartovat hru? Aktuální postup bude ztracen.</p>
-                            <button onClick={performRestart}>Ano, restartovat</button>
-                            <button onClick={() => setConfirmationAction(null)} className="secondary-btn">Zrušit</button>
-                        </>
-                    )}
-                    {confirmationAction === 'setup' && (
-                         <>
-                            <h2>Zpět do nastavení</h2>
-                            <p className="confirmation-message">Opravdu chcete opustit hru a vrátit se do nastavení?</p>
-                            <button onClick={performBackToSetup}>Ano, vrátit se</button>
-                            <button onClick={() => setConfirmationAction(null)} className="secondary-btn">Zrušit</button>
-                        </>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-  return (
-    <div className="app-container">
-      {renderGameMenuModal()}
-      <header>
-        <h1>Počítadlo Šipek</h1>
-        <div className="header-actions">
-            {view === 'game' && (
-              <div className="header-game-controls">
-                  <button onClick={() => setIsMenuOpen(true)}>Menu</button>
-              </div>
-            )}
-            <div className="view-switcher">
-                <button
-                    onClick={() => (view === 'game' || view === 'winner') ? setView('game') : setView('setup')}
-                    className={view === 'setup' || view === 'game' || view === 'winner' ? 'active' : ''}>
-                    {(view === 'game' || view === 'winner') ? 'Hra' : 'Nastavení'}
-                </button>
-                <button
-                    onClick={() => setView('stats')}
-                    className={view === 'stats' ? 'active' : ''}
-                    disabled={players.length === 0}>
-                    Statistiky
-                </button>
-            </div>
-        </div>
-      </header>
-      <main>
-        <div key={view}>
-            {view === 'setup' && renderSetupScreen()}
-            {view === 'game' && renderGameScreen()}
-            {view === 'winner' && renderWinnerScreen()}
-            {view === 'stats' && renderStatsScreen()}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-} else {
-    console.error('Root element with id "root" not found in the document.');
-}
+        <button onClick={() => fileInputRef.current?.click()} className="
