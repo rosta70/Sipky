@@ -1,6 +1,8 @@
-// FIX: Add missing React and ReactDOM imports. The previous code was incorrectly relying on global variables.
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom/client';
+// React a ReactDOM jsou nyní dostupné jako globální proměnné díky script tagům v index.html
+// Proto zde nejsou žádné importy.
+
+declare var React: any;
+declare var ReactDOM: any;
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -50,7 +52,7 @@ const formatThrow = (t: { value: number; multiplier: number; }) => {
 };
 
 const HistoryEntry = ({ game }: { game: any }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = React.useState(false);
     
     return(
       <div className="history-entry">
@@ -87,24 +89,31 @@ const HistoryEntry = ({ game }: { game: any }) => {
 };
 
 const App = () => {
-  const [view, setView] = useState('setup');
-  const [players, setPlayers] = useState<any[]>([]);
-  const [gameHistory, setGameHistory] = useState<any[]>([]);
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [gameMode, setGameMode] = useState(501);
-  const [finishMode, setFinishMode] = useState('double');
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [currentThrows, setCurrentThrows] = useState<any[]>([]);
-  const [multiplier, setMultiplier] = useState(1);
-  const [winner, setWinner] = useState<any | null>(null);
-  const [turnStartingScore, setTurnStartingScore] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [confirmationAction, setConfirmationAction] = useState<any | null>(null);
-  const [currentGame, setCurrentGame] = useState<any | null>(null);
-  const [isAiThinking, setIsAiThinking] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [view, setView] = React.useState('setup');
+  // FIX: Untyped function calls may not accept type arguments.
+  const [players, setPlayers] = React.useState([]);
+  // FIX: Untyped function calls may not accept type arguments.
+  const [gameHistory, setGameHistory] = React.useState([]);
+  const [newPlayerName, setNewPlayerName] = React.useState('');
+  const [gameMode, setGameMode] = React.useState(501);
+  const [finishMode, setFinishMode] = React.useState('double');
+  const [currentPlayerIndex, setCurrentPlayerIndex] = React.useState(0);
+  // FIX: Untyped function calls may not accept type arguments.
+  const [currentThrows, setCurrentThrows] = React.useState([]);
+  const [multiplier, setMultiplier] = React.useState(1);
+  // FIX: Untyped function calls may not accept type arguments.
+  const [winner, setWinner] = React.useState(null);
+  const [turnStartingScore, setTurnStartingScore] = React.useState(0);
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  // FIX: Untyped function calls may not accept type arguments.
+  const [confirmationAction, setConfirmationAction] = React.useState(null);
+  // FIX: Untyped function calls may not accept type arguments.
+  const [currentGame, setCurrentGame] = React.useState(null);
+  const [isAiThinking, setIsAiThinking] = React.useState(false);
+  // FIX: Untyped function calls may not accept type arguments.
+  const fileInputRef = React.useRef(null);
 
-   useEffect(() => {
+   React.useEffect(() => {
     try {
       const savedState = window.localStorage.getItem('darts-scorer-state');
       if (savedState) {
@@ -117,7 +126,7 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     try {
        const stateToSave = { players: players.map(({ name, wins, isAI }) => ({ name, wins, isAI })), gameHistory };
        window.localStorage.setItem('darts-scorer-state', JSON.stringify(stateToSave));
@@ -127,7 +136,7 @@ const App = () => {
   }, [players, gameHistory]);
 
 
-  const speak = useCallback((text: string) => {
+  const speak = React.useCallback((text: string) => {
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -141,14 +150,14 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
       if(view === 'game' && players.length > 0) {
           setTurnStartingScore(players[currentPlayerIndex].score);
       }
   }, [currentPlayerIndex, players, view]);
 
 
-  const addPlayer = useCallback(() => {
+  const addPlayer = React.useCallback(() => {
     if (newPlayerName.trim() && !players.find(p => p.name === newPlayerName.trim())) {
       setPlayers([...players, { name: newPlayerName.trim(), score: gameMode, lastTurnThrows: [], wins: 0, isAI: false }]);
       setNewPlayerName('');
@@ -156,15 +165,15 @@ const App = () => {
   }, [newPlayerName, players, gameMode]);
     
   // AI hráč je v online verzi nedostupný
-  const addAiPlayer = useCallback(() => {
+  const addAiPlayer = React.useCallback(() => {
     alert('Funkce AI soupeře není v této online verzi dostupná z bezpečnostních důvodů (vyžaduje API klíč). Aplikace je plně funkční pro hru více hráčů.');
   }, []);
 
-  const removePlayer = useCallback((name: string) => {
+  const removePlayer = React.useCallback((name: string) => {
     setPlayers(players.filter(p => p.name !== name));
   }, [players]);
 
-  const startGame = useCallback(() => {
+  const startGame = React.useCallback(() => {
     if (players.length > 0) {
       const initialPlayers = players.map(p => ({...p, score: gameMode, lastTurnThrows: [] }));
       setPlayers(initialPlayers);
@@ -188,7 +197,7 @@ const App = () => {
     }
   }, [players, gameMode, finishMode, speak]);
     
-  const recordAndNextPlayer = useCallback((lastThrows: any[]) => {
+  const recordAndNextPlayer = React.useCallback((lastThrows: any[]) => {
       const currentPlayer = players[currentPlayerIndex];
       const newTurn = {
           player: currentPlayer.name,
@@ -218,7 +227,7 @@ const App = () => {
       speak(`${players[nextIndex].name}, jsi na řadě. Zbývá ti ${players[nextIndex].score}.`);
   }, [currentPlayerIndex, players, turnStartingScore, speak]);
 
- const handleScore = useCallback((score: number) => {
+ const handleScore = React.useCallback((score: number) => {
     const throwScore = score * multiplier;
     const newThrow = { value: score, multiplier, score: throwScore };
     const newThrows = [...currentThrows, newThrow];
@@ -272,7 +281,7 @@ const App = () => {
 
   // Tato funkce se nyní nikdy nezavolá, protože nelze přidat AI hráče.
   // Je zde ponechána pro případné budoucí použití v jiném prostředí.
-  const handleAITurn = useCallback(async () => {
+  const handleAITurn = React.useCallback(async () => {
     setIsAiThinking(true);
     speak("Simulace AI není dostupná, přeskakuji kolo.");
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -281,18 +290,18 @@ const App = () => {
   }, [speak, recordAndNextPlayer]);
 
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (view === 'game' && players.length > 0 && players[currentPlayerIndex]?.isAI && !winner && !isAiThinking) {
         const timer = setTimeout(() => { handleAITurn(); }, 1500);
         return () => clearTimeout(timer);
     }
   }, [view, currentPlayerIndex, players, winner, isAiThinking, handleAITurn]);
     
-  const handleMultiplier = useCallback((m: number) => {
+  const handleMultiplier = React.useCallback((m: number) => {
     setMultiplier(current => (current === m ? 1 : m));
   }, []);
 
-  const handleUndo = useCallback(() => {
+  const handleUndo = React.useCallback(() => {
     if (currentThrows.length > 0) {
       const lastThrow = currentThrows[currentThrows.length - 1];
       const newThrows = currentThrows.slice(0, -1);
@@ -309,12 +318,12 @@ const App = () => {
     }
   }, [currentThrows, currentPlayerIndex]);
 
-  const handleRestartGame = useCallback(() => {
+  const handleRestartGame = React.useCallback(() => {
     setCurrentGame(null);
     startGame();
   }, [startGame]);
 
-  const handleBackToSetup = useCallback(() => {
+  const handleBackToSetup = React.useCallback(() => {
       setView('setup');
       setCurrentThrows([]);
       setMultiplier(1);
@@ -323,7 +332,7 @@ const App = () => {
       setCurrentGame(null);
   }, []);
 
-  const handleDownloadHistory = useCallback(() => {
+  const handleDownloadHistory = React.useCallback(() => {
     const stateToSave = {
       players: players.map(({ name, wins, isAI }) => ({ name, wins, isAI })),
       gameHistory
@@ -337,7 +346,7 @@ const App = () => {
     downloadAnchorNode.remove();
   }, [players, gameHistory]);
 
-  const handleImportHistory = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportHistory = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -614,6 +623,5 @@ const App = () => {
   );
 };
 
-// Aplikace se nyní připojí k DOM pomocí globální proměnné ReactDOM
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(<App />);
