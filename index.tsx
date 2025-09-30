@@ -1,10 +1,8 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-// Fix: Import from @google/genai library instead of using a global variable. This fixes "Cannot find name 'genai'".
+// FIX: Import GoogleGenAI and Type from @google/genai instead of using window.genai.
 import { GoogleGenAI, Type } from '@google/genai';
-
-// Fix: Initialize GoogleGenAI with API key from environment variables as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -60,6 +58,10 @@ const App = () => {
   const [currentGame, setCurrentGame] = useState(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const fileInputRef = useRef(null);
+  const aiRef = useRef(null);
+
+  // FIX: This line was causing an error and has been removed. Imports are now used.
+  // const { GoogleGenAI, Type } = window.genai;
 
    useEffect(() => {
     try {
@@ -82,6 +84,19 @@ const App = () => {
       console.error("Failed to save state to localStorage", error);
     }
   }, [players, gameHistory]);
+
+  // FIX: Initialize the Gemini AI client if an API key is provided.
+  useEffect(() => {
+    try {
+      if (process.env.API_KEY) {
+        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      } else {
+        console.warn("Gemini API key not found. AI player will be disabled.");
+      }
+    } catch (error) {
+      console.error("Failed to initialize Gemini AI:", error);
+    }
+  }, []);
 
   const speak = useCallback((text) => {
     try {
@@ -111,12 +126,21 @@ const App = () => {
     }
   }, [newPlayerName, players, gameMode]);
     
+  // FIX: Enable adding an AI player if the AI client is initialized.
   const addAiPlayer = useCallback(() => {
-    // Fix: Removed insecure API key prompt. The AI client is now initialized securely at the module level.
-    const aiPlayerName = 'Gemini Bot';
-    if (!players.find(p => p.name === aiPlayerName)) {
-      setPlayers([...players, { name: aiPlayerName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
+    if (!aiRef.current) {
+      alert('Funkce AI soupeře není dostupná. API klíč není nakonfigurován.');
+      return;
     }
+    
+    let i = 1;
+    let aiName;
+    do {
+      aiName = `Gemini Bot ${i}`;
+      i++;
+    } while (players.some(p => p.name === aiName));
+
+    setPlayers([...players, { name: aiName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
   }, [players, gameMode]);
 
   const removePlayer = useCallback((name) => {
@@ -230,7 +254,13 @@ const App = () => {
   }, [currentThrows, multiplier, players, currentPlayerIndex, turnStartingScore, recordAndNextPlayer, speak, finishMode, currentGame]);
 
   const handleAITurn = useCallback(async () => {
-    // Fix: Removed redundant check for 'ai' instance as it's now guaranteed to be initialized.
+    if (!aiRef.current) {
+        console.error("AI instance is not available. Cannot perform AI turn.");
+        speak("Omlouvám se, mám problém a nemohu hrát.");
+        recordAndNextPlayer([]);
+        return;
+    }
+
     setIsAiThinking(true);
     const currentPlayer = players[currentPlayerIndex];
     speak(`${currentPlayer.name} přemýšlí.`);
@@ -248,7 +278,7 @@ const App = () => {
     const prompt = `Jsi expert na šipky a hraješ hru ${gameMode} s ukončením na ${finishMode}. Tvůj aktuální stav je ${currentPlayer.score}. Cílem je vyhrát. Tvoje úroveň je středně pokročilá. Vrať mi tvé tři hody jako JSON pole objektů. Každý objekt reprezentuje jeden hod. Hraj realisticky, občas můžeš minout cíl a trefit sousední číslo. Pokud můžeš hru ukončit, pokus se o to. Pokud ne, připrav si co nejlepší pozici. Vždy vrať pole, i když je prázdné nebo má méně než 3 hody (např. při vítězství).`;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await aiRef.current.models.generateContent({
             model: "gemini-2.5-flash", contents: prompt,
             config: { responseMimeType: "application/json", responseSchema: responseSchema },
         });
@@ -315,6 +345,7 @@ const App = () => {
     } finally {
         setIsAiThinking(false);
     }
+// FIX: Removed GoogleGenAI and Type from dependency array as they are constants.
 }, [players, currentPlayerIndex, gameMode, finishMode, speak, recordAndNextPlayer, turnStartingScore, currentGame]);
 
   useEffect(() => {
