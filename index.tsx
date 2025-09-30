@@ -2,19 +2,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { GoogleGenAI, Type } from '@google/genai';
 
-// API klíč je nutné nastavit v prostředí, kde je aplikace spuštěna.
-// Např. pomocí Vite a .env souboru: VITE_API_KEY=váš_klíč
-// V kódu se pak přistupuje přes import.meta.env.VITE_API_KEY
-// Pro zjednodušení a dodržení pravidel zde předpokládáme, že process.env.API_KEY existuje.
-let ai;
-try {
-  if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
-} catch (e) {
-  console.warn("API klíč pro Gemini není nastaven. Funkce AI hráče nebude dostupná.");
-}
-
+// API klíč se bude inicializovat až v případě potřeby, aby nedošlo k chybě při startu.
+let ai = null;
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -122,10 +111,25 @@ const App = () => {
   }, [newPlayerName, players, gameMode]);
     
   const addAiPlayer = useCallback(() => {
+    // V tomto prostředí (GitHub Pages) nemáme bezpečný způsob, jak spravovat API klíč.
+    // Proto funkce AI vždy zobrazí upozornění.
+    // Pro plnou funkčnost by bylo nutné aplikaci "sestavit" (build) s klíčem v .env souboru.
     if (!ai) {
-        alert("Funkce AI hráče je nedostupná. API klíč pro Gemini není nakonfigurován.");
-        return;
+        // Zkusíme se zeptat na klíč, pokud ještě není nastaven.
+        const apiKey = prompt("Zadejte prosím svůj Google Gemini API klíč:");
+        if (apiKey) {
+            try {
+                ai = new GoogleGenAI({ apiKey: apiKey });
+            } catch (e) {
+                alert("Nastavení AI se nezdařilo. Zkontrolujte prosím API klíč.");
+                return;
+            }
+        } else {
+             alert("Funkce AI hráče je nedostupná. Pro aktivaci je potřeba zadat platný API klíč.");
+             return;
+        }
     }
+
     const aiPlayerName = 'Gemini Bot';
     if (!players.find(p => p.name === aiPlayerName)) {
       setPlayers([...players, { name: aiPlayerName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
@@ -243,6 +247,11 @@ const App = () => {
   }, [currentThrows, multiplier, players, currentPlayerIndex, turnStartingScore, recordAndNextPlayer, speak, finishMode, currentGame]);
 
   const handleAITurn = useCallback(async () => {
+    if (!ai) {
+        speak("Nemohu hrát, nejsem správně nakonfigurován.");
+        recordAndNextPlayer([]);
+        return;
+    }
     setIsAiThinking(true);
     const currentPlayer = players[currentPlayerIndex];
     speak(`${currentPlayer.name} přemýšlí.`);
@@ -459,4 +468,256 @@ const App = () => {
         <button onClick={startGame} disabled={players.length < 1} className="start-game-btn">
           Zahájit hru
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="
+        <button onClick={() => fileInputRef.current?.click()} className="secondary-btn">Importovat data</button>
+        <input type="file" ref={fileInputRef} onChange={handleImportHistory} style={{ display: 'none' }} accept=".json" />
+      </div>
+    </div>
+  );
+  
+   const renderPlayerCard = (player, index) => {
+    const isActive = index === currentPlayerIndex;
+    const turnThrows = currentThrows.length > 0 && isActive ? currentThrows : player.lastTurnThrows;
+    const totalTurnScore = turnThrows.reduce((sum, t) => sum + (t?.score || 0), 0);
+    const checkout = player.score <= 170 && player.score > 1 && checkoutGuide[player.score];
+
+    return (
+        <div key={player.name} className={`player-card ${isActive ? 'active' : ''}`}>
+            <div className="player-card-header">
+                <h3>{player.name} {player.isAI && <span className="bot-tag">BOT</span>}</h3>
+                <span className="player-wins">Výhry: {player.wins}</span>
+            </div>
+            <div className="score">{player.score}</div>
+             {isActive && isAiThinking && <div className="turn-info">Gemini přemýšlí...</div>}
+             {!isAiThinking && checkout && (
+                <div className="checkout-suggestion">
+                    <span>Doporučené zavření:</span> <strong>{checkout}</strong>
+                </div>
+             )}
+            <div className="turn-info">
+              {turnThrows.length > 0 && (
+                <>
+                  <span className="last-turn-throws">
+                    {turnThrows.map(formatThrow).join(' | ')}
+                  </span>
+                  &nbsp;({totalTurnScore})
+                </>
+              )}
+            </div>
+        </div>
+    );
+  };
+    
+  const renderGameScreen = () => {
+    const currentPlayer = players[currentPlayerIndex];
+    if (!currentPlayer) return <div>Načítání...</div>;
+
+    const isPlayerTurn = !currentPlayer.isAI && !isAiThinking;
+
+    return (
+      <div className="game-container">
+        <header>
+          <div className="view-switcher">
+            <button onClick={() => setView('game')} className="active">Hra</button>
+            <button onClick={() => setView('stats')}>Statistiky</button>
+          </div>
+          <div className="header-game-controls">
+            <button onClick={() => setConfirmationAction({ title: 'Restartovat hru?', message: 'Opravdu chcete restartovat aktuální hru?', onConfirm: handleRestartGame })}>Restart</button>
+            <button onClick={() => setConfirmationAction({ title: 'Ukončit hru?', message: 'Opravdu chcete ukončit hru a vrátit se do nastavení?', onConfirm: handleBackToSetup })}>Nová hra</button>
+          </div>
+        </header>
+        <main>
+          <div className="scoreboard">
+            {players.map(renderPlayerCard)}
+          </div>
+          <div className="controls">
+            <div className="current-throws-container">
+              {[...currentThrows, ...Array(3 - currentThrows.length)].map((t, i) => (
+                <div key={i} className={`throw-pill ${t ? 'multiplier-' + t.multiplier : 'placeholder'}`}>
+                  {t ? formatThrow(t) : '–'}
+                </div>
+              ))}
+            </div>
+            <div className="multiplier-controls">
+              <button onClick={() => handleMultiplier(2)} className={`multiplier-btn ${multiplier === 2 ? 'active' : ''}`} disabled={!isPlayerTurn}>Double (x2)</button>
+              <button onClick={() => handleMultiplier(3)} className={`multiplier-btn ${multiplier === 3 ? 'active' : ''}`} disabled={!isPlayerTurn}>Triple (x3)</button>
+            </div>
+            <div className="numpad">
+              {[...Array(20).keys()].map(i => (
+                <button key={i + 1} onClick={() => handleScore(i + 1)} className="numpad-btn" disabled={!isPlayerTurn}>{i + 1}</button>
+              ))}
+              <button onClick={() => handleScore(25)} className="numpad-btn bull-btn" disabled={!isPlayerTurn}>BULL</button>
+              <button onClick={() => handleScore(0)} className="numpad-btn miss-btn" disabled={!isPlayerTurn}>MISS</button>
+            </div>
+            <div className="action-controls">
+                <button onClick={handleUndo} className="action-btn" disabled={currentThrows.length === 0 || !isPlayerTurn}>Vrátit hod</button>
+                <button onClick={() => recordAndNextPlayer(currentThrows)} className="action-btn" disabled={!isPlayerTurn}>Další hráč</button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  };
+    
+  const renderWinnerScreen = () => (
+    <div className="winner-screen">
+      <h2>Konec Hry!</h2>
+      <p>Vítězem je {winner?.name || 'nikdo'}!</p>
+      <button onClick={handleRestartGame}>Hrát znovu</button>
+      <button onClick={handleBackToSetup} className="secondary-btn">Zpět do nastavení</button>
+    </div>
+  );
+
+  const renderHistoryEntry = (game) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    return(
+      <div className="history-entry">
+        <div className="history-summary" onClick={() => setIsExpanded(!isExpanded)}>
+            <span><strong>Vítěz: {game.winner}</strong> ({game.mode}, {new Date(game.startTime).toLocaleString('cs-CZ')})</span>
+            <span>{isExpanded ? '⌃' : '⌄'}</span>
+        </div>
+        {isExpanded && (
+          <div className="history-details">
+            <table className="turn-table">
+              <thead>
+                <tr>
+                  <th>Hráč</th>
+                  <th>Hody</th>
+                  <th>Skóre kola</th>
+                  <th>Zbývalo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {game.turns.map((turn, i) => (
+                  <tr key={i}>
+                    <td>{turn.player}</td>
+                    <td>{turn.throws.map(formatThrow).join(', ')}</td>
+                    <td>{turn.throws.reduce((acc, t) => acc + t.score, 0)}</td>
+                    <td>{turn.startingScore} → {turn.endingScore}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const renderStatsScreen = () => {
+    const allTurns = gameHistory.flatMap(g => g.turns);
+    const playerStats = players.map(player => {
+        const playerTurns = allTurns.filter(t => t.player === player.name);
+        const totalThrowsCount = playerTurns.reduce((sum, turn) => sum + turn.throws.length, 0);
+        const totalScore = playerTurns.reduce((sum, turn) => sum + turn.throws.reduce((ts, t) => ts + t.score, 0), 0);
+        
+        let bestTurnScore = 0;
+        playerTurns.forEach(turn => {
+            const turnScore = turn.throws.reduce((acc, t) => acc + t.score, 0);
+            if (turnScore > bestTurnScore) {
+                bestTurnScore = turnScore;
+            }
+        });
+
+        const averageTurnScore = playerTurns.length > 0 ? (totalScore / playerTurns.length).toFixed(1) : 0;
+        const averageDartScore = totalThrowsCount > 0 ? (totalScore / totalThrowsCount).toFixed(1) : 0;
+
+        return {
+            name: player.name,
+            wins: player.wins,
+            gamesPlayed: gameHistory.filter(g => g.players.includes(player.name)).length,
+            averageTurnScore,
+            averageDartScore,
+            bestTurnScore,
+        };
+    });
+
+    return (
+        <>
+        <header>
+            <div className="view-switcher">
+                <button onClick={() => setView('game')}>Hra</button>
+                <button onClick={() => setView('stats')} className="active">Statistiky</button>
+            </div>
+            <div className="header-game-controls">
+                <button onClick={() => setConfirmationAction({ title: 'Vymazat historii?', message: 'Opravdu chcete smazat všechny hráče a kompletní herní historii?', onConfirm: () => { setPlayers([]); setGameHistory([]); } })}>Vymazat vše</button>
+                <button onClick={handleDownloadHistory}>Exportovat data</button>
+            </div>
+        </header>
+        <main>
+            <div className="stats-container">
+              <h2>Celkové statistiky</h2>
+               <div className="player-stats-grid">
+                  {playerStats.map(stats => (
+                      <div key={stats.name} className="player-stats-card">
+                          <h4>{stats.name}</h4>
+                          <div className="stat-item"><span>Výhry</span> <strong>{stats.wins}</strong></div>
+                          <div className="stat-item"><span>Odehrané hry</span> <strong>{stats.gamesPlayed}</strong></div>
+                          <div className="stat-item"><span>Průměr na 3 šipky</span> <strong>{stats.averageTurnScore}</strong></div>
+                          <div className="stat-item"><span>Průměr na 1 šipku</span> <strong>{stats.averageDartScore}</strong></div>
+                          <div className="stat-item"><span>Nejlepší kolo</span> <strong>{stats.bestTurnScore}</strong></div>
+                      </div>
+                  ))}
+               </div>
+                
+                <h3 className="history-title">Historie her</h3>
+                <div className="game-history">
+                    {gameHistory.length > 0 ? (
+                      [...gameHistory].reverse().map(renderHistoryEntry)
+                    ) : (
+                      <p>Zatím nebyly odehrány žádné hry.</p>
+                    )}
+                </div>
+            </div>
+        </main>
+       </>
+    );
+  };
+    
+  const renderConfirmationModal = () => {
+    if (!confirmationAction) return null;
+    const { title, message, onConfirm } = confirmationAction;
+
+    return (
+        <div className="modal-overlay" onClick={() => setConfirmationAction(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h2>{title}</h2>
+                <p className="confirmation-message">{message}</p>
+                <button onClick={() => { onConfirm(); setConfirmationAction(null); }}>Potvrdit</button>
+                <button className="secondary-btn" onClick={() => setConfirmationAction(null)}>Zrušit</button>
+            </div>
+        </div>
+    );
+  };
+
+  const renderContent = () => {
+    switch (view) {
+      case 'game':
+        return renderGameScreen();
+      case 'winner':
+        return renderWinnerScreen();
+      case 'stats':
+          return renderStatsScreen();
+      case 'setup':
+      default:
+        return (
+            <>
+                <header>
+                    <h1>Počítadlo Šipek</h1>
+                </header>
+                <main>{renderSetupScreen()}</main>
+            </>
+        )
+    }
+  };
+
+  return (
+    <div className="app-container">
+        {renderContent()}
+        {renderConfirmationModal()}
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
