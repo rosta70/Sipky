@@ -1,5 +1,4 @@
-
-
+// Fix: Add imports for React and ReactDOM to resolve UMD global errors.
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -45,6 +44,7 @@ const checkoutGuide = {
 };
 
 const App = () => {
+  // Fix: Removed local destructuring of React hooks. They are now imported at the top of the file.
   const [view, setView] = useState('setup');
   const [players, setPlayers] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
