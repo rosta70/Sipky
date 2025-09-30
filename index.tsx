@@ -1,8 +1,11 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-// FIX: Import GoogleGenAI and Type from @google/genai instead of using window.genai.
-import { GoogleGenAI, Type } from '@google/genai';
+
+// Fix: Removed unused and undefined 'genai' constant. The AI functionality
+// that would use this constant is disabled in this version of the application,
+// so this line was a leftover causing a reference error.
 
 const checkoutGuide = {
   170: 'T20, T20, D-BULL', 167: 'T20, T19, D-BULL', 164: 'T20, T18, D-BULL', 161: 'T20, T17, D-BULL',
@@ -58,10 +61,7 @@ const App = () => {
   const [currentGame, setCurrentGame] = useState(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const fileInputRef = useRef(null);
-  const aiRef = useRef(null);
-
-  // FIX: This line was causing an error and has been removed. Imports are now used.
-  // const { GoogleGenAI, Type } = window.genai;
+  // AI Ref a useEffect pro inicializaci jsou odstraněny, protože v prohlížeči nelze bezpečně pracovat s API klíčem.
 
    useEffect(() => {
     try {
@@ -85,18 +85,6 @@ const App = () => {
     }
   }, [players, gameHistory]);
 
-  // FIX: Initialize the Gemini AI client if an API key is provided.
-  useEffect(() => {
-    try {
-      if (process.env.API_KEY) {
-        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      } else {
-        console.warn("Gemini API key not found. AI player will be disabled.");
-      }
-    } catch (error) {
-      console.error("Failed to initialize Gemini AI:", error);
-    }
-  }, []);
 
   const speak = useCallback((text) => {
     try {
@@ -126,22 +114,10 @@ const App = () => {
     }
   }, [newPlayerName, players, gameMode]);
     
-  // FIX: Enable adding an AI player if the AI client is initialized.
+  // AI hráč je v online verzi nedostupný
   const addAiPlayer = useCallback(() => {
-    if (!aiRef.current) {
-      alert('Funkce AI soupeře není dostupná. API klíč není nakonfigurován.');
-      return;
-    }
-    
-    let i = 1;
-    let aiName;
-    do {
-      aiName = `Gemini Bot ${i}`;
-      i++;
-    } while (players.some(p => p.name === aiName));
-
-    setPlayers([...players, { name: aiName, score: gameMode, lastTurnThrows: [], wins: 0, isAI: true }]);
-  }, [players, gameMode]);
+    alert('Funkce AI soupeře není v této online verzi dostupná z bezpečnostních důvodů (vyžaduje API klíč). Aplikace je plně funkční pro hru více hráčů.');
+  }, []);
 
   const removePlayer = useCallback((name) => {
     setPlayers(players.filter(p => p.name !== name));
@@ -253,100 +229,16 @@ const App = () => {
     });
   }, [currentThrows, multiplier, players, currentPlayerIndex, turnStartingScore, recordAndNextPlayer, speak, finishMode, currentGame]);
 
+  // Tato funkce se nyní nikdy nezavolá, protože nelze přidat AI hráče.
+  // Je zde ponechána pro případné budoucí použití v jiném prostředí.
   const handleAITurn = useCallback(async () => {
-    if (!aiRef.current) {
-        console.error("AI instance is not available. Cannot perform AI turn.");
-        speak("Omlouvám se, mám problém a nemohu hrát.");
-        recordAndNextPlayer([]);
-        return;
-    }
-
     setIsAiThinking(true);
-    const currentPlayer = players[currentPlayerIndex];
-    speak(`${currentPlayer.name} přemýšlí.`);
+    speak("Simulace AI není dostupná, přeskakuji kolo.");
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    recordAndNextPlayer([]);
+    setIsAiThinking(false);
+  }, [speak, recordAndNextPlayer]);
 
-    const throwSchema = {
-      type: Type.OBJECT,
-      properties: {
-        value: { type: Type.NUMBER, description: "Číslo, které bylo trefeno (1-20, 25 pro bull)." },
-        multiplier: { type: Type.NUMBER, description: "Násobič (1 pro single, 2 pro double, 3 pro triple)." },
-        score: { type: Type.NUMBER, description: "Celkové skóre za hod (value * multiplier)." }
-      },
-      required: ["value", "multiplier", "score"]
-    };
-    const responseSchema = { type: Type.ARRAY, items: throwSchema, description: "Pole s maximálně třemi hody." };
-    const prompt = `Jsi expert na šipky a hraješ hru ${gameMode} s ukončením na ${finishMode}. Tvůj aktuální stav je ${currentPlayer.score}. Cílem je vyhrát. Tvoje úroveň je středně pokročilá. Vrať mi tvé tři hody jako JSON pole objektů. Každý objekt reprezentuje jeden hod. Hraj realisticky, občas můžeš minout cíl a trefit sousední číslo. Pokud můžeš hru ukončit, pokus se o to. Pokud ne, připrav si co nejlepší pozici. Vždy vrať pole, i když je prázdné nebo má méně než 3 hody (např. při vítězství).`;
-
-    try {
-        const response = await aiRef.current.models.generateContent({
-            model: "gemini-2.5-flash", contents: prompt,
-            config: { responseMimeType: "application/json", responseSchema: responseSchema },
-        });
-
-        const aiThrows = JSON.parse(response.text.trim());
-        if (!Array.isArray(aiThrows)) throw new Error("AI response was not an array.");
-        
-        let turnThrowsForHistory = [];
-        for (const aiThrow of aiThrows) {
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            setCurrentThrows(prev => [...prev, aiThrow]);
-            turnThrowsForHistory.push(aiThrow);
-            
-            let turnOutcome = 'continue';
-            
-            setPlayers(currentPlayers => {
-                const updatedPlayers = JSON.parse(JSON.stringify(currentPlayers));
-                const playerToUpdate = updatedPlayers[currentPlayerIndex];
-                const newScore = playerToUpdate.score - aiThrow.score;
-
-                if (newScore < 0 || newScore === 1) { // BUST
-                    playerToUpdate.score = turnStartingScore;
-                    speak(`Přešlap!`);
-                    turnOutcome = 'bust';
-                } else if (newScore === 0) { // WIN?
-                    if (finishMode === 'double' && aiThrow.multiplier !== 2 && aiThrow.value !== 25) {
-                        playerToUpdate.score = turnStartingScore;
-                        speak(`Přešlap, špatný double!`);
-                        turnOutcome = 'bust';
-                    } else {
-                        playerToUpdate.score = 0;
-                        const winningTurn = { player: playerToUpdate.name, throws: turnThrowsForHistory, startingScore: turnStartingScore, endingScore: 0 };
-                        if (currentGame) {
-                            const finishedGame = { ...currentGame, endTime: new Date().toISOString(), winner: playerToUpdate.name, turns: [...currentGame.turns, winningTurn] };
-                            setGameHistory(prev => [...prev, finishedGame]);
-                            setCurrentGame(null);
-                        }
-                        const newWinner = { ...playerToUpdate, score: 0 };
-                        setWinner(newWinner);
-                        setView('winner');
-                        speak(`Konec hry! Vítězem je ${newWinner.name}! Gratuluji!`);
-                        turnOutcome = 'win';
-                        return updatedPlayers.map(p => p.name === newWinner.name ? { ...p, score: 0, wins: p.wins + 1, lastTurnThrows: turnThrowsForHistory } : p);
-                    }
-                } else { // CONTINUE
-                    playerToUpdate.score = newScore;
-                    speak(`${aiThrow.score}`);
-                }
-                return updatedPlayers;
-            });
-            
-            if (turnOutcome === 'bust' || turnOutcome === 'win') {
-                if(turnOutcome === 'bust') recordAndNextPlayer(turnThrowsForHistory);
-                setIsAiThinking(false);
-                return;
-            }
-        }
-        recordAndNextPlayer(turnThrowsForHistory);
-
-    } catch (error) {
-        console.error("Chyba při volání Gemini API:", error);
-        speak("Omlouvám se, mám problém s myšlením. Přeskakuji kolo.");
-        recordAndNextPlayer([]);
-    } finally {
-        setIsAiThinking(false);
-    }
-// FIX: Removed GoogleGenAI and Type from dependency array as they are constants.
-}, [players, currentPlayerIndex, gameMode, finishMode, speak, recordAndNextPlayer, turnStartingScore, currentGame]);
 
   useEffect(() => {
     if (view === 'game' && players.length > 0 && players[currentPlayerIndex]?.isAI && !winner && !isAiThinking) {
